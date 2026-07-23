@@ -34,11 +34,6 @@ export function Sidebar() {
       href: `/workspace/${wsId}/projects`,
       icon: FolderKanban,
     },
-    {
-      title: 'Laporan Harian',
-      href: `/workspace/${wsId}/daily-logs`,
-      icon: FileText,
-    },
   ];
 
   const settingsItems = [
