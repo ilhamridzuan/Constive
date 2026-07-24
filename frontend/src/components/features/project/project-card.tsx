@@ -136,8 +136,8 @@ export function ProjectCard({ project, workspaceId, userRole = 'ADMIN' }: Projec
         )}
 
         <Button size="sm" className="h-8 text-xs gap-1 ml-auto" asChild>
-          <Link href={`/workspace/${workspaceId}/projects/${project.id}`}>
-            Buka Gantt Chart <ArrowUpRight className="h-3.5 w-3.5" />
+          <Link href={`/workspace/${workspaceId}/projects/${project.id}`} target="_blank" rel="noopener noreferrer">
+            Buka Proyek <ArrowUpRight className="h-3.5 w-3.5" />
           </Link>
         </Button>
       </CardFooter>

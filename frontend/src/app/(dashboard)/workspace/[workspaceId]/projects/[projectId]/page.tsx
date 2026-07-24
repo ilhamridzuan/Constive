@@ -1,24 +1,22 @@
 'use client';
 
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { projectService } from '@/services/project.service';
 import { Project } from '@/types/domain/project';
 import {
   Activity,
-  ArrowLeft,
+  ArrowRight,
   Calendar,
   CheckCircle2,
   Clock,
   FileText,
-  MapPin,
-  Settings,
+  Users,
 } from 'lucide-react';
 import Link from 'next/link';
 import { use, useEffect, useState } from 'react';
 
-export default function ProjectDetailPage({
+export default function ProjectDashboardOverviewPage({
   params,
 }: {
   params: Promise<{ workspaceId: string; projectId: string }>;
@@ -39,140 +37,131 @@ export default function ProjectDetailPage({
 
   if (loading) {
     return (
-      <div className="max-w-5xl mx-auto space-y-4 animate-pulse">
-        <div className="h-8 w-48 bg-muted rounded" />
-        <div className="h-64 bg-card rounded-lg border border-border" />
-      </div>
-    );
-  }
-
-  if (!project) {
-    return (
-      <div className="max-w-5xl mx-auto py-12 text-center">
-        <h2 className="text-lg font-bold text-foreground">Proyek Tidak Ditemukan</h2>
-        <Button className="mt-4" asChild>
-          <Link href={`/workspace/${workspaceId}/projects`}>Kembali ke Daftar Proyek</Link>
-        </Button>
-      </div>
-    );
-  }
-
-  return (
-    <div className="max-w-5xl mx-auto space-y-6">
-      {/* Top Breadcrumb Back Link */}
-      <div>
-        <Link
-          href={`/workspace/${workspaceId}/projects`}
-          className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors mb-2"
-        >
-          <ArrowLeft className="h-3.5 w-3.5" /> Kembali ke Daftar Proyek
-        </Link>
-
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-bold tracking-tight text-foreground">{project.name}</h1>
-              <Badge variant={project.status === 'ACTIVE' ? 'success' : 'secondary'}>
-                {project.status}
-              </Badge>
-            </div>
-            {project.location && (
-              <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-                <MapPin className="h-3.5 w-3.5 text-primary" /> {project.location}
-              </p>
-            )}
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" className="gap-2">
-              <Settings className="h-4 w-4" /> Pengaturan
-            </Button>
-            <Button size="sm" className="gap-2" asChild>
-              <Link href={`/workspace/${workspaceId}/projects/${projectId}/gantt`}>
-                <Activity className="h-4 w-4" /> Interactive Gantt Chart
-              </Link>
-            </Button>
-          </div>
+      <div className="space-y-4 animate-pulse">
+        <div className="h-28 bg-card rounded-lg border border-border" />
+        <div className="grid grid-cols-2 gap-4">
+          <div className="h-36 bg-card rounded-lg border border-border" />
+          <div className="h-36 bg-card rounded-lg border border-border" />
         </div>
       </div>
+    );
+  }
 
-      {/* Progress & Overview Header Card */}
-      <Card className="border-border bg-card">
-        <CardContent className="p-6 space-y-4">
-          {project.description && (
-            <p className="text-sm text-foreground leading-relaxed">{project.description}</p>
-          )}
+  if (!project) return null;
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2 border-t border-border">
-            <div className="space-y-1">
-              <p className="text-xs text-muted-foreground flex items-center gap-1">
-                <Calendar className="h-3.5 w-3.5 text-primary" /> Tanggal Pelaksanaan
-              </p>
-              <p className="text-sm font-semibold text-foreground">
-                {project.startDate || 'Belum diatur'} — {project.endDate || 'Selesai'}
-              </p>
-            </div>
-
-            <div className="space-y-1">
-              <p className="text-xs text-muted-foreground flex items-center gap-1">
-                <Activity className="h-3.5 w-3.5 text-purple-500" /> Progres WBS Gantt
-              </p>
-              <div className="flex items-center gap-2">
-                <div className="w-28 bg-muted h-2.5 rounded-full overflow-hidden">
-                  <div
-                    className="bg-primary h-full rounded-full transition-all"
-                    style={{ width: `${project.progressPercent || 0}%` }}
-                  />
-                </div>
-                <span className="text-sm font-bold text-foreground">{project.progressPercent || 0}%</span>
+  return (
+    <div className="space-y-6">
+      {/* Overview Stats Row */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <Card className="border-border bg-card">
+          <CardContent className="p-4 flex items-center justify-between">
+            <div>
+              <p className="text-xs font-semibold text-muted-foreground uppercase">Progres WBS Gantt</p>
+              <div className="flex items-center gap-2 mt-1">
+                <span className="text-2xl font-extrabold text-foreground">{project.progressPercent || 0}%</span>
+                <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">
+                  {project.progressPercent === 100 ? 'Selesai' : 'On Track'}
+                </span>
               </div>
             </div>
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <Activity className="h-5 w-5" />
+            </div>
+          </CardContent>
+        </Card>
 
+        <Card className="border-border bg-card">
+          <CardContent className="p-4 flex items-center justify-between">
+            <div>
+              <p className="text-xs font-semibold text-muted-foreground uppercase">Tugas Gantt Chart</p>
+              <p className="text-2xl font-extrabold text-purple-600 dark:text-purple-400 mt-0.5">
+                {project.taskCount || 0}
+              </p>
+            </div>
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-500/10 text-purple-500">
+              <CheckCircle2 className="h-5 w-5" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-border bg-card">
+          <CardContent className="p-4 flex items-center justify-between">
+            <div>
+              <p className="text-xs font-semibold text-muted-foreground uppercase">Laporan Harian</p>
+              <p className="text-2xl font-extrabold text-amber-600 dark:text-amber-400 mt-0.5">
+                {project.dailyLogCount || 0}
+              </p>
+            </div>
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-500/10 text-amber-500">
+              <FileText className="h-5 w-5" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Main Project Overview Details */}
+      <Card className="border-border bg-card">
+        <CardHeader>
+          <CardTitle className="text-base font-bold">Ringkasan Pekerjaan & Jadwal</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4 text-xs">
+          {project.description && (
+            <p className="text-muted-foreground leading-relaxed text-sm">{project.description}</p>
+          )}
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-3 border-t border-border">
             <div className="space-y-1">
-              <p className="text-xs text-muted-foreground flex items-center gap-1">
-                <FileText className="h-3.5 w-3.5 text-amber-500" /> Total Dokumentasi
+              <p className="text-muted-foreground flex items-center gap-1 font-medium">
+                <Calendar className="h-3.5 w-3.5 text-primary" /> Periode Pelaksanaan Proyek:
               </p>
               <p className="text-sm font-semibold text-foreground">
-                {project.dailyLogCount || 0} Laporan Harian
+                {project.startDate || 'Belum diatur'} s/d {project.endDate || 'Selesai'}
               </p>
+            </div>
+
+            <div className="space-y-1">
+              <p className="text-muted-foreground flex items-center gap-1 font-medium">
+                <Users className="h-3.5 w-3.5 text-blue-500" /> Penanggung Jawab / PM:
+              </p>
+              <p className="text-sm font-semibold text-foreground">Ahmad Dahlan (PM)</p>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Quick Action Modules Navigation */}
+      {/* Quick Action Navigation Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <Card className="border-border bg-card hover:border-primary/50 transition-colors">
+        <Card className="border-border bg-card hover:border-primary/50 transition-all">
           <CardHeader className="pb-2">
             <CardTitle className="text-base font-bold flex items-center gap-2">
-              <Activity className="h-5 w-5 text-purple-500" /> Gantt Chart & Jadwal WBS
+              <Activity className="h-5 w-5 text-purple-500" /> Gantt Chart & Schedule WBS
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <p className="text-xs text-muted-foreground">
-              Kelola durasi tugas, dependensi antar-pekerjaan, dan kolaborasi tim secara interaktif.
+              Buka modul Gantt Chart interaktif untuk mengedit durasi, dependensi tugas, dan alur pekerjaan.
             </p>
-            <Button size="sm" variant="outline" className="w-full" asChild>
+            <Button size="sm" className="w-full gap-1" asChild>
               <Link href={`/workspace/${workspaceId}/projects/${projectId}/gantt`}>
-                Buka Canvas Gantt Chart
+                Buka Gantt Chart <ArrowRight className="h-3.5 w-3.5" />
               </Link>
             </Button>
           </CardContent>
         </Card>
 
-        <Card className="border-border bg-card hover:border-primary/50 transition-colors">
+        <Card className="border-border bg-card hover:border-primary/50 transition-all">
           <CardHeader className="pb-2">
             <CardTitle className="text-base font-bold flex items-center gap-2">
-              <FileText className="h-5 w-5 text-amber-500" /> Laporan Harian & Foto Lapangan
+              <FileText className="h-5 w-5 text-amber-500" /> Laporan Harian & Foto
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <p className="text-xs text-muted-foreground">
-              Lihat laporan harian dari pengawas, verifikasi pekerjaan, dan periksa dokumentasi foto.
+              Periksa laporan harian dari lapangan, jumlah pekerja, foto progres, dan verifikasi PM.
             </p>
-            <Button size="sm" variant="outline" className="w-full" asChild>
+            <Button size="sm" variant="outline" className="w-full gap-1" asChild>
               <Link href={`/workspace/${workspaceId}/projects/${projectId}/daily-logs`}>
-                Lihat Laporan Harian Proyek
+                Buka Laporan Harian <ArrowRight className="h-3.5 w-3.5" />
               </Link>
             </Button>
           </CardContent>
