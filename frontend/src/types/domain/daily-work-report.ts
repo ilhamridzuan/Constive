@@ -1,10 +1,3 @@
-export type DailyWorkReportStatus =
-  | 'DRAFT_LOG'
-  | 'SUBMITTED'
-  | 'VERIFIED_PM'
-  | 'REVISION_REQUESTED'
-  | 'ARCHIVED';
-
 export type WeatherCondition = 'CERAH' | 'BERAWAN' | 'GERIMIS' | 'HUJAN';
 
 export interface DailyWorkReportMedia {
@@ -26,8 +19,6 @@ export interface DailyWorkReport {
   weather: WeatherCondition;
   laborCount: number;
   notes: string;
-  status: DailyWorkReportStatus;
-  revisionNotes?: string;
   media: DailyWorkReportMedia[];
   createdAt: string;
   updatedAt?: string;
@@ -42,7 +33,6 @@ export interface CreateDailyWorkReportInput {
 }
 
 export interface DailyWorkReportFilter {
-  status?: DailyWorkReportStatus | 'ALL';
   weather?: WeatherCondition | 'ALL';
   searchQuery?: string;
   startDate?: string;

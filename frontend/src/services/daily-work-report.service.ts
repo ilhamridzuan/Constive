@@ -17,7 +17,6 @@ let mockDailyWorkReports: DailyWorkReport[] = [
     laborCount: 14,
     notes:
       'Pengecoran kolom lantai 1 sektor A telah selesai 100%. Pemasangan bekisting balok dilanjutkan untuk persiapan besok.',
-    status: 'SUBMITTED',
     media: [
       {
         id: 'med-1',
@@ -60,7 +59,6 @@ let mockDailyWorkReports: DailyWorkReport[] = [
     laborCount: 18,
     notes:
       'Pemasangan bekisting dan pembesian balok utama area B. Seluruh pekerja menggunakan APD lengkap.',
-    status: 'VERIFIED_PM',
     media: [
       {
         id: 'med-4',
@@ -85,9 +83,6 @@ let mockDailyWorkReports: DailyWorkReport[] = [
     laborCount: 10,
     notes:
       'Hujan deras mulai pukul 13.00. Pekerjaan outdoor dihentikan sementara, tim dialihkan ke fabrikasi besi di area terlindung.',
-    status: 'REVISION_REQUESTED',
-    revisionNotes:
-      'Mohon tambahkan rincian volume besi yang difabrikasi dan foto lokasi penyimpanan material.',
     media: [
       {
         id: 'med-5',
@@ -112,7 +107,6 @@ let mockDailyWorkReports: DailyWorkReport[] = [
     laborCount: 16,
     notes:
       'Pekerjaan galian tanah fondasi tapak sektor C. Volume galian mencapai 85 m³. Seluruh material sisa galian diangkut keluar lokasi.',
-    status: 'VERIFIED_PM',
     media: [
       {
         id: 'med-6',
@@ -146,7 +140,6 @@ let mockDailyWorkReports: DailyWorkReport[] = [
     laborCount: 12,
     notes:
       'Pemasangan pipa instalasi air bersih dan kotor di basement. Pekerjaan berjalan lancar tanpa kendala teknis.',
-    status: 'SUBMITTED',
     media: [
       {
         id: 'med-8',
@@ -171,7 +164,6 @@ let mockDailyWorkReports: DailyWorkReport[] = [
     laborCount: 20,
     notes:
       'Pengecoran plat lantai dasar sektor B menggunakan ready mix K-350. Total pemakaian 12 truk mixer (84 m³). Slump test memenuhi spesifikasi.',
-    status: 'VERIFIED_PM',
     media: [
       {
         id: 'med-9',
@@ -205,7 +197,6 @@ let mockDailyWorkReports: DailyWorkReport[] = [
     laborCount: 8,
     notes:
       'Pembersihan area tapak dan pembuatan pagar pengaman keliling proyek.',
-    status: 'DRAFT_LOG',
     media: [
       {
         id: 'med-11',
@@ -237,9 +228,6 @@ export const dailyWorkReportService = {
     }
 
     if (filter) {
-      if (filter.status && filter.status !== 'ALL') {
-        reports = reports.filter((r) => r.status === filter.status);
-      }
       if (filter.weather && filter.weather !== 'ALL') {
         reports = reports.filter((r) => r.weather === filter.weather);
       }
@@ -291,7 +279,6 @@ export const dailyWorkReportService = {
       weather: input.weather,
       laborCount: input.laborCount,
       notes: input.notes,
-      status: 'SUBMITTED',
       media: input.mediaUrls.map((url, idx) => ({
         id: `med-${Date.now()}-${idx}`,
         dailyWorkReportId: newReportId,
@@ -305,39 +292,6 @@ export const dailyWorkReportService = {
 
     mockDailyWorkReports.unshift(newReport);
     return newReport;
-  },
-
-  // PATCH /daily-work-reports/:id/verify
-  async verifyDailyWorkReport(
-    projectId: string,
-    reportId: string
-  ): Promise<DailyWorkReport> {
-    await new Promise((res) => setTimeout(res, 250));
-    const report = mockDailyWorkReports.find((r) => r.id === reportId);
-    if (!report) {
-      throw new Error('Laporan harian tidak ditemukan');
-    }
-    report.status = 'VERIFIED_PM';
-    report.revisionNotes = undefined;
-    report.updatedAt = new Date().toISOString();
-    return { ...report };
-  },
-
-  // PATCH /daily-work-reports/:id/request-revision
-  async requestRevision(
-    projectId: string,
-    reportId: string,
-    revisionNotes: string
-  ): Promise<DailyWorkReport> {
-    await new Promise((res) => setTimeout(res, 250));
-    const report = mockDailyWorkReports.find((r) => r.id === reportId);
-    if (!report) {
-      throw new Error('Laporan harian tidak ditemukan');
-    }
-    report.status = 'REVISION_REQUESTED';
-    report.revisionNotes = revisionNotes;
-    report.updatedAt = new Date().toISOString();
-    return { ...report };
   },
 
   async uploadPhoto(file: File): Promise<string> {

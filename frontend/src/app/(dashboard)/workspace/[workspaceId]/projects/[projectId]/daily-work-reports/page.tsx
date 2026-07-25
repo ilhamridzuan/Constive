@@ -6,16 +6,12 @@ import { DailyWorkReportFilters } from '@/components/features/daily-work-report/
 import { DailyWorkReportTable } from '@/components/features/daily-work-report/daily-work-report-table';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import {
-  useDailyWorkReports,
-  useRequestRevisionDailyWorkReport,
-  useVerifyDailyWorkReport,
-} from '@/hooks/use-daily-work-reports';
+import { useDailyWorkReports } from '@/hooks/use-daily-work-reports';
 import {
   DailyWorkReport,
   DailyWorkReportFilter,
 } from '@/types/domain/daily-work-report';
-import { AlertCircle, CheckCircle2, Clock, FileText, Plus, RefreshCw } from 'lucide-react';
+import { Camera, FileText, Plus, RefreshCw, Users } from 'lucide-react';
 import Link from 'next/link';
 import { use, useState } from 'react';
 
@@ -28,7 +24,6 @@ export default function ProjectDailyWorkReportsPage({
 
   // Filter state
   const [filter, setFilter] = useState<DailyWorkReportFilter>({
-    status: 'ALL',
     weather: 'ALL',
     searchQuery: '',
   });
@@ -37,32 +32,22 @@ export default function ProjectDailyWorkReportsPage({
   const [selectedReport, setSelectedReport] = useState<DailyWorkReport | null>(null);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
 
-  // TanStack Query & Mutations
+  // TanStack Query
   const {
     data: reports = [],
     isLoading,
     refetch,
   } = useDailyWorkReports(workspaceId, projectId, filter);
-  const verifyMutation = useVerifyDailyWorkReport(workspaceId, projectId);
-  const revisionMutation = useRequestRevisionDailyWorkReport(workspaceId, projectId);
 
   const handleOpenDetail = (report: DailyWorkReport) => {
     setSelectedReport(report);
     setIsSheetOpen(true);
   };
 
-  const handleVerify = (reportId: string) => {
-    verifyMutation.mutate(reportId);
-  };
-
-  const handleRequestRevision = (reportId: string, notes: string) => {
-    revisionMutation.mutate({ reportId, revisionNotes: notes });
-  };
-
-  // Status metrics summary
-  const submittedCount = reports.filter((r) => r.status === 'SUBMITTED').length;
-  const verifiedCount = reports.filter((r) => r.status === 'VERIFIED_PM').length;
-  const revisionCount = reports.filter((r) => r.status === 'REVISION_REQUESTED').length;
+  // Metrics summary
+  const totalReports = reports.length;
+  const totalPhotos = reports.reduce((acc, r) => acc + r.media.length, 0);
+  const totalLaborCount = reports.reduce((acc, r) => acc + r.laborCount, 0);
 
   return (
     <div className="space-y-4 max-w-7xl mx-auto pb-8">
@@ -103,12 +88,24 @@ export default function ProjectDailyWorkReportsPage({
       <div className="grid grid-cols-3 gap-3">
         <Card className="border-border bg-card p-3 shadow-xs">
           <CardContent className="p-0 flex items-center gap-3">
-            <div className="p-2 bg-blue-500/10 text-blue-600 rounded-lg shrink-0">
-              <Clock className="h-4 w-4" />
+            <div className="p-2 bg-amber-500/10 text-amber-600 rounded-lg shrink-0">
+              <FileText className="h-4 w-4" />
             </div>
             <div>
-              <span className="text-[11px] text-muted-foreground block font-medium">Menunggu PM</span>
-              <span className="text-lg font-bold text-foreground">{submittedCount}</span>
+              <span className="text-[11px] text-muted-foreground block font-medium">Total Laporan</span>
+              <span className="text-lg font-bold text-foreground">{totalReports}</span>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-border bg-card p-3 shadow-xs">
+          <CardContent className="p-0 flex items-center gap-3">
+            <div className="p-2 bg-blue-500/10 text-blue-600 rounded-lg shrink-0">
+              <Camera className="h-4 w-4" />
+            </div>
+            <div>
+              <span className="text-[11px] text-muted-foreground block font-medium">Foto Progres</span>
+              <span className="text-lg font-bold text-foreground">{totalPhotos}</span>
             </div>
           </CardContent>
         </Card>
@@ -116,23 +113,11 @@ export default function ProjectDailyWorkReportsPage({
         <Card className="border-border bg-card p-3 shadow-xs">
           <CardContent className="p-0 flex items-center gap-3">
             <div className="p-2 bg-emerald-500/10 text-emerald-600 rounded-lg shrink-0">
-              <CheckCircle2 className="h-4 w-4" />
+              <Users className="h-4 w-4" />
             </div>
             <div>
-              <span className="text-[11px] text-muted-foreground block font-medium">Terverifikasi</span>
-              <span className="text-lg font-bold text-foreground">{verifiedCount}</span>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-border bg-card p-3 shadow-xs">
-          <CardContent className="p-0 flex items-center gap-3">
-            <div className="p-2 bg-amber-500/10 text-amber-600 rounded-lg shrink-0">
-              <AlertCircle className="h-4 w-4" />
-            </div>
-            <div>
-              <span className="text-[11px] text-muted-foreground block font-medium">Minta Revisi</span>
-              <span className="text-lg font-bold text-foreground">{revisionCount}</span>
+              <span className="text-[11px] text-muted-foreground block font-medium">Total Akumulasi Pekerja</span>
+              <span className="text-lg font-bold text-foreground">{totalLaborCount}</span>
             </div>
           </CardContent>
         </Card>
@@ -153,12 +138,6 @@ export default function ProjectDailyWorkReportsPage({
             <DailyWorkReportTable
               reports={reports}
               onSelectReport={handleOpenDetail}
-              onVerifyReport={handleVerify}
-              onRequestRevision={(report) => {
-                setSelectedReport(report);
-                setIsSheetOpen(true);
-              }}
-              isPM={true}
             />
           </div>
 
@@ -181,14 +160,11 @@ export default function ProjectDailyWorkReportsPage({
         </>
       )}
 
-      {/* Detail & Review Sheet */}
+      {/* Detail Sheet */}
       <DailyWorkReportDetailSheet
         report={selectedReport}
         open={isSheetOpen}
         onOpenChange={setIsSheetOpen}
-        onVerify={handleVerify}
-        onRequestRevision={handleRequestRevision}
-        isPM={true}
       />
     </div>
   );
