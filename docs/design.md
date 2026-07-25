@@ -1,9 +1,9 @@
 # Constive Design System & UI/UX Specification
 
-> **Document Status:** Active  
-> **Version:** 1.0.0  
-> **Last Updated:** 2026-07-23  
-> **Source Documents:** PRD v0.2 (Approved), TDD v1.0.0 (Approved)  
+> **Document Status:** Approved  
+> **Version:** 1.1.0  
+> **Last Updated:** 2026-07-25  
+> **Source Documents:** PRD v0.3 (Draft), TDD v1.1.0 (Draft)  
 > **Target Implementation:** Next.js 14+ App Router · Tailwind CSS v3.4+ · shadcn/ui · TypeScript  
 
 ---
@@ -194,11 +194,10 @@ All colors are specified as CSS custom properties for runtime theme switching. V
 
 | Entity Status | Badge Variant | Background (Light) | Text (Light) | Border |
 |:---|:---|:---|:---|:---|
-| `DRAFT` / `DRAFT_LOG` / `TODO` | `outline` | `var(--muted)` | `var(--muted-foreground)` | `var(--border)` |
+| `DRAFT` / `DRAFT_REPORT` / `TODO` | `outline` | `var(--muted)` | `var(--muted-foreground)` | `var(--border)` |
 | `ACTIVE` / `IN_PROGRESS` / `SUBMITTED` | `default` (primary) | `var(--info-muted)` | `var(--info-foreground)` | `var(--info)` |
-| `COMPLETED` / `VERIFIED_PM` | `success` | `var(--success-muted)` | `var(--success-foreground)` | `var(--success)` |
+| `COMPLETED` | `success` | `var(--success-muted)` | `var(--success-foreground)` | `var(--success)` |
 | `ARCHIVED` | `secondary` | `var(--muted)` | `var(--muted-foreground)` | `var(--border)` |
-| `REVISION_REQUESTED` | `warning` | `var(--warning-muted)` | `var(--warning-foreground)` | `var(--warning)` |
 | `EXPIRED` / `REVOKED` | `destructive` | `var(--danger-muted)` | `var(--danger-foreground)` | `var(--danger)` |
 | `PENDING` | `outline` | `var(--warning-muted)` | `var(--warning-foreground)` | `var(--warning)` |
 | `ACCEPTED` | `success` | `var(--success-muted)` | `var(--success-foreground)` | `var(--success)` |
@@ -475,10 +474,10 @@ Based on an **8px base grid** with 4px half-step for fine-tuning.
 │  Task List Panel      │  Gantt Timeline Canvas                   │
 │  (w-[320px] min)      │  (flex-1, overflow-x-auto)               │
 │                       │                                          │
-│  ☐ Pekerjaan Pondasi  │  ████████████░░░░░░░  60%               │
-│    ☐ Tiang Pancang    │    ██████████████████  100%              │
-│    ☐ Pondasi Strip    │    ██████░░░░░░░░░░░  30%               │
-│  ☐ Struktur Lantai 1  │         ████████████░░░░░  75%          │
+│  ☐ 1.0  Pekerjaan Pondasi    │  ████████████░░░░░░░  60%               │
+│      ☐ 1.1  Tiang Pancang    │    ██████████████████  100%              │
+│      ☐ 1.2  Pondasi Strip    │    ██████░░░░░░░░░░░  30%               │
+│  ☐ 2.0  Struktur Lantai 1    │         ████████████░░░░░  75%          │
 │                       │                                          │
 │                       │  ↕ Today line (red dashed)               │
 ├───────────────────────┴──────────────────────────────────────────┤
@@ -489,7 +488,9 @@ Based on an **8px base grid** with 4px half-step for fine-tuning.
 **Task List Panel (Left):**
 - Tree view with collapse/expand chevrons.
 - Each row `h-40px`, border-bottom `var(--border)`.
-- Columns: Checkbox (select), Task Name (ellipsis overflow), Status Badge, Progress %.
+- Columns: Checkbox (select), WBS Code, Task Name (ellipsis overflow), Status Badge, Progress %.
+- WBS Code is auto-generated based on hierarchy position.
+- Hierarchy prioritized up to level 2, but technically supports deeper levels.
 - Indentation: `pl-{level * 6}` per nesting depth (24px per level).
 - Click row → opens `<TaskEditorDialog />`.
 
@@ -503,6 +504,7 @@ Based on an **8px base grid** with 4px half-step for fine-tuning.
 
 **Toolbar (`<GanttToolbar />`):**
 - "+ Tambah Tugas" → primary button.
+- Expand All / Collapse All toggle button.
 - Zoom level toggle: `<ToggleGroup>` — "Hari" | "Minggu" | "Bulan".
 - Filter dropdown: By status (TODO, IN_PROGRESS, COMPLETED), by assignee.
 - Fullscreen toggle icon button.
@@ -528,8 +530,10 @@ Based on an **8px base grid** with 4px half-step for fine-tuning.
 
 | Field | Type | Notes |
 |:---|:---|:---|
+| WBS Code | Display | Read-only, auto-generated based on hierarchy, mono text |
 | Task Name | `<Input>` | Required, max 200 chars |
 | Description | `<Textarea>` | Optional, max 2000 chars |
+| Level | Display | Read-only, auto-calculated based on parent |
 | Status | `<Select>` | TODO, IN_PROGRESS, COMPLETED |
 | Start Date | `<DatePicker>` (shadcn) | Required |
 | End Date | `<DatePicker>` | Required, must be ≥ start_date |
@@ -544,9 +548,9 @@ Based on an **8px base grid** with 4px half-step for fine-tuning.
 
 ---
 
-### 3.4 [FT-003] Daily Log Form & Visual Documentation (Mobile-Friendly)
+### 3.4 [FT-003] Daily Work Report Form & Visual Documentation (Mobile-Friendly)
 
-#### 3.4.1 Page: Daily Logs List (`/workspace/[workspaceId]/projects/[projectId]/daily-logs`)
+#### 3.4.1 Page: Daily Work Reports List (`/workspace/[workspaceId]/projects/[projectId]/daily-work-reports`)
 
 **Layout:** Desktop: data table. Mobile: card list.
 
@@ -558,9 +562,8 @@ Based on an **8px base grid** with 4px half-step for fine-tuning.
 | Pengawas | 20% | Avatar + Name |
 | Cuaca | 10% | Weather icon + label (☀️ Cerah, 🌧️ Hujan, ☁️ Berawan, 🌦️ Gerimis) |
 | Pekerja | 10% | Number with person icon |
-| Status | 15% | Status badge (per status map in §2.1.3) |
 | Catatan | 20% | Truncated text (ellipsis at 80 chars) |
-| Aksi | 10% | View, Verify (PM only), Request Revision (PM only) |
+| Aksi | 10% | View, Komentar |
 
 - **Row Height:** 48px.
 - **Filters:** Date range picker, status filter, supervisor filter.
@@ -569,7 +572,7 @@ Based on an **8px base grid** with 4px half-step for fine-tuning.
 **Mobile Card List (`<LogCardList />`):**
 ```
 ┌──────────────────────────────────┐
-│  22 Jul 2026         [SUBMITTED] │  ← date + status badge
+│  22 Jul 2026                     │  ← date
 │  ☀️ Cerah · 👷 12 pekerja        │  ← weather + labor
 │  Pengecoran kolom lantai 1...    │  ← notes truncated
 │  📷 3 foto                       │  ← media count
@@ -579,7 +582,7 @@ Based on an **8px base grid** with 4px half-step for fine-tuning.
 - Gap between cards: `gap-3`.
 - Tap card → navigate to detail view.
 
-#### 3.4.2 Page: New Daily Log Form (`/workspace/[workspaceId]/projects/[projectId]/daily-logs/new`)
+#### 3.4.2 Page: New Daily Work Report Form (`/workspace/[workspaceId]/projects/[projectId]/daily-work-reports/new`)
 
 **Layout:** Mobile-first single column (`max-w-[640px] mx-auto`). Generous touch targets (min 44×44px tap area).
 
@@ -620,16 +623,16 @@ Based on an **8px base grid** with 4px half-step for fine-tuning.
   - Max 10 photos per log (UI-enforced).
 
 **Section 6: Submit Actions**
-- "Simpan Draf" — secondary button (`variant="outline"`). Saves to `localStorage` via `useDailyLogDraft` hook.
+- "Simpan Draf" — secondary button (`variant="outline"`). Saves to `localStorage` via `useDailyWorkReportDraft` hook.
 - "Kirim Laporan" — primary button (`h-12 w-full text-base font-semibold`). Disabled until weather and labor_count are filled and at least 1 photo is attached.
 - Auto-save draft indicator: "Draf tersimpan otomatis" caption with checkmark icon, debounced (2s interval).
 
 **Offline / Draft Persistence:**
-- All text field values auto-saved to `localStorage` keyed by `draft:dailylog:{projectId}:{date}`.
+- All text field values auto-saved to `localStorage` keyed by `draft:daily-work-report:{projectId}:{date}`.
 - On page load: check for existing draft and hydrate form. Show `<Alert variant="info">` — "Draf laporan ditemukan. Data sebelumnya telah dimuat."
 - On successful submit: clear draft from `localStorage`.
 
-#### 3.4.3 Component: Daily Log Detail / Review View
+#### 3.4.3 Component: Daily Work Report Detail View
 
 **Trigger:** PM clicks on a submitted log in the list.
 
@@ -640,13 +643,26 @@ Based on an **8px base grid** with 4px half-step for fine-tuning.
 2. **Data Grid:** Weather | Labor Count | Submitted At — in a 3-column summary bar.
 3. **Notes:** Full text rendering.
 4. **Photo Gallery:** Grid of thumbnails (`grid grid-cols-3 gap-2`). Click opens lightbox (full-screen image viewer with prev/next navigation, close button).
-5. **PM Actions (visible only to PM/Admin/Owner):**
-   - "Verifikasi Laporan" — success button (`variant="default"` with green styling).
-   - "Minta Revisi" — warning button. On click → expand text area for `revision_notes` (required, min 10 chars). Submit: "Kirim Permintaan Revisi".
-
-**Revision State Display:**
-- When status is `REVISION_REQUESTED`: Yellow banner at top with PM's revision notes.
-- Supervisor sees: "Kirim Ulang" button that re-opens the form pre-filled with existing data.
+5. **Comments Section:** (visible to all workspace members for commenting)
+   - Section header: 'Komentar ({count})' with 'h4' typography
+   - Comment input box: Textarea (min-h-[60px]) with 'Tulis komentar...' placeholder + 'Kirim' primary button (sm size)
+   - Comment list: Vertical stack with gap-3
+   - Each comment card anatomy:
+     ```
+     ┌──────────────────────────────────────┐
+     │  [Avatar 28px] Nama User · 2 jam lalu │  ← body-small + caption
+     │  Isi komentar teks...                  │  ← body text
+     │  [Balas] [Edit] [Hapus]                │  ← ghost buttons, text-xs
+     │    ┌── Reply indent (pl-8) ──────────┐ │
+     │    │ [Avatar] User B · 1 jam lalu    │ │
+     │    │ Balasan komentar...              │ │
+     │    │ [Balas] [Edit] [Hapus]           │ │
+     │    └─────────────────────────────────┘ │
+     └──────────────────────────────────────┘
+     ```
+   - Edit/Delete buttons only visible on user's own comments (client-side check)
+   - Reply form: Inline textarea that appears below the comment being replied to, with 'Batal' + 'Balas' buttons
+   - Empty state: 'Belum ada komentar. Jadilah yang pertama berkomentar.'
 
 ---
 
@@ -916,7 +932,7 @@ Every data-driven view MUST have an empty state:
 |:---|:---|:---|:---|
 | Projects list | "Belum ada proyek" | "Buat proyek konstruksi pertama untuk memulai." | "Buat Proyek Baru" |
 | Gantt tasks | "Belum ada tugas" | "Tambahkan tugas pertama ke jadwal proyek." | "Tambah Tugas" |
-| Daily logs | "Belum ada laporan" | "Laporan harian dari lapangan akan muncul di sini." | "Buat Laporan Baru" |
+| Daily work reports | "Belum ada laporan" | "Laporan harian dari lapangan akan muncul di sini." | "Buat Laporan Baru" |
 | Members | "Belum ada anggota" | "Undang tim Anda untuk mulai berkolaborasi." | "Undang Anggota" |
 | Notifications | "Tidak ada notifikasi" | "Anda sudah up-to-date!" | — |
 
@@ -998,7 +1014,7 @@ Every data-driven view MUST have an empty state:
 | `AP-05` | **DO NOT** omit error state handling for API failures. | Every API call MUST have error handling UI (toast notification or inline error message). Never fail silently. |
 | `AP-06` | **DO NOT** store Access Token (JWT) in `localStorage` or `sessionStorage`. | Access Token MUST be stored in-memory only (React state/context). Refresh Token in HTTP-Only Secure Cookie. Per TDD §6.1. |
 | `AP-07` | **DO NOT** make database queries without `workspace_id` context. | All data access MUST be scoped to `workspace_id` for multi-tenant isolation. Per PRD Negative Constraints. |
-| `AP-08` | **DO NOT** store binary file data (photos) in the database. | Photo files MUST be uploaded to Supabase Storage. Only the URL string is stored in `daily_log_media.file_url`. Per PRD Negative Constraints. |
+| `AP-08` | **DO NOT** store binary file data (photos) in the database. | Photo files MUST be uploaded to Supabase Storage. Only the URL string is stored in `daily_work_report_media.file_url`. Per PRD Negative Constraints. |
 | `AP-09` | **DO NOT** use generic browser `alert()`, `confirm()`, or `prompt()` dialogs. | Use shadcn `<Dialog>`, `<AlertDialog>`, and `<Toast>` components for all user communications. |
 | `AP-10` | **DO NOT** use `<img>` tags without `alt` attributes. | Every image MUST have a descriptive `alt` text for screen readers. Use `alt=""` ONLY for purely decorative images. |
 | `AP-11` | **DO NOT** create buttons or links without visible focus indicators. | All interactive elements MUST show `focus-visible` ring styles. Never apply `outline-none` without replacement focus styling. |
@@ -1081,4 +1097,4 @@ screens: {
 
 ---
 
-*End of Constive Design System & UI/UX Specification v1.0.0*
+*End of Constive Design System & UI/UX Specification v1.1.0*

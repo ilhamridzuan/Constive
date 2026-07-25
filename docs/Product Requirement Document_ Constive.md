@@ -3,7 +3,7 @@
 | Parameter Dokumen | Detail Informasi |
 | --- | --- |
 | Nama Sistem / Produk | Constive Construction Management Platform |
-| Versi Dokumen | v0.2 |
+| Versi Dokumen | v0.3 |
 | Status Dokumen | Approved |
 | Penyusun (Author) | Tim Pengembang Constive |
 | Tanggal Pembuatan | 22 Juli 2026 |
@@ -15,6 +15,7 @@
 | --- | --- | --- | --- |
 | v0.1 | 22 Juli 2026 | Tim Pengembang Constive | Draf awal berdasarkan konsolidasi rencana strategis, cetak biru teknis, dan penetapan model bisnis PLG Freemium. |
 | v0.2 | 22 Juli 2026 | System Analyst | Penambahan modul [FT-004] Autentikasi & Pengelolaan Identitas Pengguna: alur Sign Up/Sign In, Reset Password/Magic Link, Invite Activation Gate, dan Manajemen Sesi JWT. Pembaruan ERD, NFR, dan Glosarium terkait. |
+| v0.3 | 25 Juli 2026 | System Analyst | Hapus alur review status laporan harian & ganti dengan fitur komentar berdiskusi, rename daily_work_reports, Gantt Chart WBS multi-level. |
 
 ## Bab 1: Latar Belakang & Tujuan (Background & Objectives)
 
@@ -39,7 +40,9 @@ Visi jangka panjang Constive adalah menjadi standar utama platform kolaborasi da
 | Manajemen Workspace & Billing | C / R / U / D | R | - |
 | Manajemen Anggota & Undangan | C / R / U / D | C / R / U | - |
 | Manajemen Proyek & Task (Gantt Chart) | C / R / U / D | C / R / U / A | R |
-| Laporan Harian & Foto Progres | C / R / U / D | C / R / U / A | C / R / U (Milik Sendiri) |
+| Laporan Harian, Foto Progres, & Komentar | C / R / U / D | C / R / U | C / R / U (Milik Sendiri) |
+
+*Catatan: Semua anggota workspace dapat memberikan komentar pada laporan harian.*
 | Manajemen Material & DMS (Fase 2) | C / R / U / D | C / R / U | R / C (Input Logistik) |
 | RAB & Finansial (Fase 3) | C / R / U / D | C / R / U | - |
 
@@ -48,7 +51,7 @@ Visi jangka panjang Constive adalah menjadi standar utama platform kolaborasi da
 ### 4.1 In-Scope (Fitur Masuk MVP)
 
 - **Manajemen Workspace & Multi-Tenancy (PLG Freemium):** Fitur ini memungkinkan pengguna membuat *workspace* mandiri atau bergabung ke beberapa *workspace* sekaligus dengan model lisensi paket Free (hingga 10 *users*) dan *Hybrid Seats*. Setiap akun pengguna bersifat independen dan dilengkapi antarmuka *Workspace Switcher* untuk memisahkan proyek pribadi dan kantor.
-- **Interactive Gantt Chart & Real-Time Sync:** Modul penjadwalan visual yang memanfaatkan library gantt-task-react dengan *custom wrapper component*, TanStack Query untuk *Optimistic UI updates*, serta Supabase Realtime via WebSockets. Project Manager dapat mengelola hirarki WBS, tanggal mulai/selesai, serta dependensi antar-tugas secara kolaboratif pada antarmuka desktop.
+- **Interactive Gantt Chart & Real-Time Sync:** Modul penjadwalan visual yang memanfaatkan library gantt-task-react dengan *custom wrapper component*, TanStack Query untuk *Optimistic UI updates*, serta Supabase Realtime via WebSockets. Project Manager dapat mengelola hirarki WBS multi-level (diprioritaskan hingga level 2, contoh: "1. Fondasi -> 1.1 Pemasangan Tiang Pancang"), tanggal mulai/selesai, serta dependensi antar-tugas secara kolaboratif pada antarmuka desktop.
 - **Form Laporan Harian Pintar & Dokumentasi Visual (Mobile-Friendly):** Antarmuka web yang dirancang *mobile-friendly* bagi Pengawas Lapangan untuk mencatat kondisi cuaca, jumlah tenaga kerja, catatan kendala, serta mengunggah foto progres fisik langsung dari lokasi proyek. Berkas foto diunggah langsung ke Supabase Storage via API untuk efisiensi penyimpanan database.
 
 ### 4.2 Out-of-Scope (Ditunda ke Fase Lanjutan)
@@ -108,7 +111,7 @@ Feature: Manajemen Workspace & Undangan Anggota
 
 #### Deskripsi Fungsional
 
-Modul penjadwalan visual interaktif berbasis desktop yang dibangun menggunakan library gantt-task-react dengan *custom wrapper component*. PM dapat melakukan aksi *drag-and-drop* untuk mengatur durasi, tanggal pelaksanaan, serta hirarki dependensi tugas (parent/sub-task). Sistem memanfaatkan TanStack Query untuk *Optimistic UI updates* (UI berubah seketika secara lokal) dan Supabase Realtime via WebSockets untuk menyinkronkan perubahan ke layar PM lain secara instan tanpa memuat ulang halaman.
+Modul penjadwalan visual interaktif berbasis desktop yang dibangun menggunakan library gantt-task-react dengan *custom wrapper component*. PM dapat melakukan aksi *drag-and-drop* untuk mengatur durasi, tanggal pelaksanaan, serta hirarki dependensi tugas (parent/sub-task) dengan dukungan WBS multi-level (hingga level 2). Sistem akan secara otomatis meng-generate kode WBS berdasarkan posisi dalam hirarki. Sistem memanfaatkan TanStack Query untuk *Optimistic UI updates* (UI berubah seketika secara lokal) dan Supabase Realtime via WebSockets untuk menyinkronkan perubahan ke layar PM lain secara instan tanpa memuat ulang halaman.
 
 #### Aturan Bisnis & Edge Cases (Business Logic)
 
@@ -128,6 +131,12 @@ Feature: Interactive Gantt Chart & Kolaborasi Real-Time
     And Sistem mengirim mutasi data ke API backend dan menyiarkan perubahan via Supabase Realtime ke PM lain
     And Database PostgreSQL mengonfirmasi pembaruan tanggal tugas
 
+  Scenario: Success - Membuat sub-task di bawah parent task
+    Given PM berada di halaman Gantt Chart
+    When PM membuat tugas baru sebagai child dari tugas "1. Pekerjaan Tanah"
+    Then Sistem menambahkan tugas tersebut dengan kode WBS otomatis "1.1" (level 2)
+    And Tugas baru ditampilkan secara menjorok ke dalam di bawah parent task
+
   Scenario: Failure - Jaringan terputus saat menggeser tugas
     Given PM berada di halaman Gantt Chart dan koneksi internet terputus
     When PM menggeser batang tugas "Pemasangan Bekeristing"
@@ -144,7 +153,7 @@ Feature: Interactive Gantt Chart & Kolaborasi Real-Time
 
 #### Deskripsi Fungsional
 
-Formulir input terstruktur pada antarmuka web yang dioptimalkan secara *mobile-friendly* untuk diakses dari browser ponsel pintar. Pengawas Lapangan dapat memilih proyek aktif, menginput kondisi cuaca, jumlah tenaga kerja yang hadir, serta catatan kendala operasional. Pengawas dapat mengambil foto progres fisik menggunakan kamera ponsel dan mengunggahnya langsung ke Supabase Storage via API, di mana backend menyimpan URL foto ke tabel daily_log_media.
+Formulir input terstruktur pada antarmuka web yang dioptimalkan secara *mobile-friendly* untuk diakses dari browser ponsel pintar. Pengawas Lapangan dapat memilih proyek aktif, menginput kondisi cuaca, jumlah tenaga kerja yang hadir, serta catatan kendala operasional. Pengawas dapat mengambil foto progres fisik menggunakan kamera ponsel dan mengunggahnya langsung ke Supabase Storage via API, di mana backend menyimpan URL foto ke tabel daily_work_report_media. Seluruh anggota workspace dapat memberikan komentar pada laporan harian yang telah dikirim, membalas komentar (threaded replies), serta mengedit atau menghapus komentar milik mereka sendiri.
 
 #### Aturan Bisnis & Edge Cases (Business Logic)
 
@@ -162,8 +171,14 @@ Feature: Form Laporan Harian Pintar & Dokumentasi Visual
     When Pengawas mengisi log cuaca "Cerah", jumlah pekerja "12", catatan "Pengecoran kolom lantai 1 selesai", dan memilih 2 foto dari kamera
     And Pengawas mengeklik tombol "Kirim Laporan"
     Then Berkas foto terunggah ke Supabase Storage Bucket
-    And Data laporan tersimpan di tabel `daily_logs` dan URL foto tersimpan di `daily_log_media`
+    And Data laporan tersimpan di tabel `daily_work_reports` dan URL foto tersimpan di `daily_work_report_media`
     And Dasbor pemantauan tim kantor terbarui secara real-time
+
+  Scenario: Success - Mengirim komentar pada laporan harian
+    Given Anggota workspace berada di halaman detail laporan harian
+    When Anggota mengisi teks komentar dan mengeklik "Kirim Komentar"
+    Then Sistem menyimpan komentar tersebut dengan referensi ke laporan harian
+    And Komentar ditampilkan dalam urutan waktu di bawah laporan harian
 
   Scenario: Failure - Mengunggah berkas foto melebihi batas ukuran
     Given Pengawas berada di formulir Laporan Harian
@@ -442,24 +457,16 @@ stateDiagram-v2
 
 ```mermaid
 stateDiagram-v2
-    [*] --> Draft_Log : Pengawas Buka Form Laporan
-    Draft_Log --> Submitted : Pengawas Klik "Kirim Laporan"
-    Submitted --> Verified_PM : PM Review & Verifikasi Laporan
-    Submitted --> Revision_Requested : PM Minta Revisi Laporan
-    Revision_Requested --> Submitted : Pengawas Perbaiki Data & Kirim Ulang
-    Verified_PM --> Archived : Laporan Terkunci dalam Histori Proyek
-    Archived --> [*]
+    [*] --> Draft_Report : Pengawas Buka Form Laporan
+    Draft_Report --> Submitted : Pengawas Klik "Kirim Laporan"
+    Submitted --> [*]
 ```
 
 ### 6.4 Tabel Transisi Status Laporan Harian
 
 | Status Awal | Aksi / Trigger Event | Status Akhir | Aktor Penanggung Jawab | Syarat & Kondisi Validasi |
 | --- | --- | --- | --- | --- |
-| Draft_Log | Klik "Kirim Laporan" | Submitted | Pengawas Lapangan | Log cuaca, jumlah pekerja wajib diisi, dan minimal 1 foto terlampir. |
-| Submitted | Klik "Verifikasi" | Verified_PM | Project Manager | PM menyetujui kesesuaian laporan harian dengan progres fisik. |
-| Submitted | Klik "Minta Revisi" | Revision_Requested | Project Manager | PM wajib menginput catatan alasan revisi secara tertulis. |
-| Revision_Requested | Klik "Kirim Ulang" | Submitted | Pengawas Lapangan | Pengawas telah memperbarui data atau foto yang dipermasalahkan. |
-| Verified_PM | Otomatis Sistem | Archived | System / Auto-Lock | Data laporan dikunci dari penyuntingan untuk menjaga keabsahan audit. |
+| Draft_Report | Klik "Kirim Laporan" | Submitted | Pengawas Lapangan | Log cuaca, jumlah pekerja wajib diisi, dan minimal 1 foto terlampir. |
 
 ## Bab 7: Gambaran Entitas & Model Data (High-Level Data Model)
 
@@ -473,9 +480,11 @@ erDiagram
     WORKSPACES ||--o{ WORKSPACE_INVITATIONS : "has_many"
     USERS ||--o{ WORKSPACE_INVITATIONS : "invited_by"
     PROJECTS ||--|{ TASKS : "has_many"
-    PROJECTS ||--o{ DAILY_LOGS : "logs"
-    USERS ||--o{ DAILY_LOGS : "creates"
-    DAILY_LOGS ||--o{ DAILY_LOG_MEDIA : "attaches"
+    PROJECTS ||--o{ DAILY_WORK_REPORTS : "logs"
+    USERS ||--o{ DAILY_WORK_REPORTS : "creates"
+    DAILY_WORK_REPORTS ||--o{ DAILY_WORK_REPORT_MEDIA : "attaches"
+    DAILY_WORK_REPORTS ||--o{ DAILY_WORK_REPORT_COMMENTS : "has_comments"
+    USERS ||--o{ DAILY_WORK_REPORT_COMMENTS : "authors"
 
     USERS {
         uuid id PK
@@ -528,8 +537,10 @@ erDiagram
         date start_date
         date end_date
         uuid parent_id FK
+        integer level
+        string wbs_code
     }
-    DAILY_LOGS {
+    DAILY_WORK_REPORTS {
         uuid id PK
         uuid project_id FK
         uuid supervisor_id FK
@@ -538,11 +549,20 @@ erDiagram
         integer labor_count
         text notes
     }
-    DAILY_LOG_MEDIA {
+    DAILY_WORK_REPORT_MEDIA {
         uuid id PK
-        uuid daily_log_id FK
+        uuid daily_work_report_id FK
         string file_url
         timestamp created_at
+    }
+    DAILY_WORK_REPORT_COMMENTS {
+        uuid id PK
+        uuid daily_work_report_id FK
+        uuid user_id FK
+        uuid parent_comment_id FK
+        text content
+        timestamp created_at
+        timestamp updated_at
     }
 ```
 
@@ -553,16 +573,17 @@ erDiagram
 - **Entitas `workspace_invitations`:** Menyimpan data undangan workspace yang dikirim oleh Admin, mencakup email penerima, peran yang ditetapkan, token unik sekali pakai, status undangan (*pending*, *accepted*, *expired*, *revoked*), dan masa berlaku token. Entitas ini menjadi kunci mekanisme *Invite Activation Gate* pada modul [FT-004].
 - **Entitas `workspace_members`:** Tabel penghubung (*junction table*) antara users dan workspaces yang menentukan peran (*role*) spesifik pengguna di dalam *workspace* tersebut.
 - **Entitas `projects`:** Menyimpan profil utama proyek konstruksi (nama, lokasi, status, tenggat waktu) yang terikat pada *workspace* tertentu.
-- **Entitas `tasks`:** Menyimpan data hirarki struktur kerja (WBS) untuk rendering Gantt Chart, mencakup durasi, status, dan *parent_id* untuk dependensi tugas.
-- **Entitas `daily_logs`:** Menyimpan catatan rekapitulasi operasional harian yang dikirimkan oleh Pengawas Lapangan.
-- **Entitas `daily_log_media`:** Menyimpan tautan URL gambar bukti progres lapangan yang terhubung dengan layanan cloud storage.
+- **Entitas `tasks`:** Menyimpan data hirarki struktur kerja (WBS) untuk rendering Gantt Chart, mencakup durasi, status, *parent_id* untuk dependensi tugas, *level* kedalaman hirarki, serta *wbs_code* yang dihasilkan otomatis.
+- **Entitas `daily_work_reports`:** Menyimpan catatan rekapitulasi operasional harian yang dikirimkan oleh Pengawas Lapangan.
+- **Entitas `daily_work_report_media`:** Menyimpan tautan URL gambar bukti progres lapangan yang terhubung dengan layanan cloud storage.
+- **Entitas `daily_work_report_comments`:** Menyimpan data komentar pada laporan harian, referensi pembuat komentar (user_id), serta balasan berulir (parent_comment_id).
 
 ## Bab 8: Persyaratan Non-Fungsional (Non-Functional Requirements / NFR)
 
 - **Keamanan Data & Otorisasi (Security):** Seluruh komunikasi data antara peramban dan server wajib menggunakan enkripsi SSL/TLS 1.3 (HTTPS). Otentikasi pengguna menerapkan *Stateless JWT* melalui Supabase Auth dengan otorisasi berbasis RBAC dan isolasi data multi-tenancy di tingkat *query* database. Access Token JWT disimpan secara *in-memory* (tidak di `localStorage`) untuk meminimalkan risiko XSS, sedangkan Refresh Token disimpan dalam **HTTP-Only Secure Cookie** dengan atribut `SameSite=Lax` untuk mitigasi CSRF. Sistem menerapkan *Refresh Token Rotation* dan *Reuse Detection* dari Supabase Auth untuk mendeteksi pencurian token.
 - **Performa & Waktu Respon (Performance):** Waktu muat (*load time*) antarmuka laporan harian pada peramban seluler tidak boleh melebihi 2,0 detik pada jaringan seluler 4G. Perubahan visual pada Gantt Chart wajib menampilkan pembaruan seketika (*< 100 ms*) menggunakan *Optimistic UI*, dan sinkronisasi data antar-klien via Supabase Real-time wajib selesai dalam waktu kurang dari 500 milidetik.
 - **Ketersediaan & Keandalan (Availability & Reliability):** Sistem menjamin tingkat ketersediaan (*uptime*) minimal 99,5% setiap bulan di luar jadwal pemeliharaan terencana. Seluruh data transaksi di database PostgreSQL dibackup secara otomatis setiap hari dengan retensi data selama 30 hari di cloud storage.
-- **Pencatatan Audit Log (Audit Trail):** Sistem wajib mencatat setiap aktivitas mutasi data penting (pembuatan proyek, perubahan jadwal Gantt Chart, dan verifikasi laporan harian) ke dalam tabel audit terpisah. Log ini mencatat *timestamp*, *user_id*, *workspace_id*, aksi yang dilakukan, serta data sebelum-sesudah mutasi.
+- **Pencatatan Audit Log (Audit Trail):** Sistem wajib mencatat setiap aktivitas mutasi data penting (pembuatan proyek, perubahan jadwal Gantt Chart, dan pengiriman laporan harian) ke dalam tabel audit terpisah. Log ini mencatat *timestamp*, *user_id*, *workspace_id*, aksi yang dilakukan, serta data sebelum-sesudah mutasi.
 
 ## Bab 9: Batasan Teknologi & Integrasi (Tech Constraints & Integrations)
 

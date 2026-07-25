@@ -1,7 +1,7 @@
 # Technical Design Document (TDD)
 > **Project Name:** Constive Construction Management Platform  
 > **Document Status:** Approved  
-> **Last Updated:** 2026-07-22  
+> **Last Updated:** 2026-07-25  
 > **Author / Tech Lead:** Tim Pengembang Constive & Senior System Architect  
 
 ---
@@ -12,7 +12,7 @@
 
 | Kategori | Teknologi / Tool | Versi / Spesifikasi | Catatan & Rationale |
 | :--- | :--- | :--- | :--- |
-| **Dokumen** | Versioning | `v1.0.0` | Baseline rilis arsitektur awal (Fase 1 Core MVP) |
+| **Dokumen** | Versioning | `v1.1.0` | Baseline rilis arsitektur awal (Fase 1 Core MVP) |
 | **Tech Lead** | Tim Pengembang Constive | `lead@constive.id` | Architect & Code Owner |
 | **Target PRD** | Product Requirement Document: Constive | `v0.2` | Mengacu pada PRD Constive v0.2 (Approved) |
 | **Frontend Framework**| Next.js App Router (TypeScript) | `v14.2+ / v15.x` | SSR, React Server Components, Mobile-Friendly UI |
@@ -46,7 +46,7 @@ graph TD
         AM[Auth & Security Module - JWT / RTR]
         WM[Workspace & Tenant Isolation Module]
         PM[Project & Gantt Chart Task Module]
-        DLM[Daily Log & Visual Media Module]
+        DWRM[Daily Work Report & Visual Media Module]
         NM[Realtime Broadcast & Presence Module]
         ALM[Audit Log & Security Module]
     end
@@ -57,7 +57,7 @@ graph TD
         RLS[Supabase Row Level Security Engine]
         RC[(Redis Cache & Rate Limiting)]
         WS[Supabase Realtime WebSockets Engine]
-        S3[Supabase S3 Storage - daily-log-media]
+        S3[Supabase S3 Storage - daily-work-report-media]
     end
 
     WA -->|HTTPS / REST API| CDN
@@ -68,15 +68,15 @@ graph TD
     AG --> AM
     AG --> WM
     AG --> PM
-    AG --> DLM
+    AG --> DWRM
     AG --> NM
     AG --> ALM
 
     AM -->|Verify Credentials & Tokens| SA
     WM -->|Multi-Tenant Access Control| RLS
     PM -->|Query WBS & Task Mutations| RLS
-    DLM -->|Save Log & Store Media Metadata| RLS
-    DLM -->|Upload Binary Media Photos max 5MB| S3
+    DWRM -->|Save Log & Store Media Metadata| RLS
+    DWRM -->|Upload Binary Media Photos max 5MB| S3
     ALM -->|Write Audit Trail Logs| DB
     RLS --> DB
 
@@ -127,7 +127,7 @@ frontend/
     │   │   │       │   └── [projectId]/
     │   │   │       │       ├── gantt/
     │   │   │       │       │   └── page.tsx
-    │   │   │       │       ├── daily-logs/
+    │   │   │       │       ├── daily-work-reports/
     │   │   │       │       │   ├── page.tsx
     │   │   │       │       │   └── new/page.tsx
     │   │   │       │       └── page.tsx
@@ -169,8 +169,8 @@ frontend/
     │       │   ├── gantt-toolbar.tsx
     │       │   ├── task-editor-dialog.tsx
     │       │   └── presence-avatars.tsx
-    │       └── daily-log/           # Mobile-Friendly Daily Log & Photo Documentation
-    │           ├── daily-log-form.tsx
+    │       └── daily-work-report/           # Mobile-Friendly Daily Log & Photo Documentation
+    │           ├── daily-work-report-form.tsx
     │           ├── photo-uploader.tsx
     │           ├── weather-selector.tsx
     │           └── log-card-list.tsx
@@ -179,7 +179,7 @@ frontend/
     │   ├── use-workspace.ts
     │   ├── use-gantt-realtime.ts
     │   ├── use-optimistic-gantt.ts
-    │   ├── use-daily-log-draft.ts
+    │   ├── use-daily-work-report-draft.ts
     │   └── use-debounce.ts
     ├── services/                    # API Service Layer & Axios Client Abstractions
     │   ├── api-client.ts            # Central Axios HTTP Client with Interceptors
@@ -187,7 +187,7 @@ frontend/
     │   ├── workspace.service.ts
     │   ├── project.service.ts
     │   ├── gantt.service.ts
-    │   └── daily-log.service.ts
+    │   └── daily-work-report.service.ts
     ├── store/                       # Client Global State (Zustand)
     │   ├── use-ui-store.ts          # Sidebar, Modal, Theme States
     │   ├── use-workspace-store.ts   # Active Workspace Context
@@ -200,7 +200,7 @@ frontend/
     │       ├── workspace.type.ts
     │       ├── project.type.ts
     │       ├── task.type.ts
-    │       └── daily-log.type.ts
+    │       └── daily-work-report.type.ts
     └── utils/                       # Utility Helpers & Constants
         ├── constants.ts
         ├── formatters.ts
@@ -295,17 +295,17 @@ backend/
 │       │   │   └── batch-update-tasks.dto.ts
 │       │   └── entities/
 │       │       └── task.entity.ts
-│       ├── daily-log/               # Module [FT-003] Smart Daily Log & Documentation
-│       │   ├── daily-log.controller.ts
-│       │   ├── daily-log.module.ts
-│       │   ├── daily-log.service.ts
+│       ├── daily-work-report/               # Module [FT-003] Smart Daily Log & Documentation
+│       │   ├── daily-work-report.controller.ts
+│       │   ├── daily-work-report.module.ts
+│       │   ├── daily-work-report.service.ts
 │       │   ├── dto/
-│       │   │   ├── create-daily-log.dto.ts
+│       │   │   ├── create-daily-work-report.dto.ts
 │       │   │   ├── verify-daily-log.dto.ts
 │       │   │   └── request-revision.dto.ts
 │       │   └── entities/
-│       │       ├── daily-log.entity.ts
-│       │       └── daily-log-media.entity.ts
+│       │       ├── daily-work-report.entity.ts
+│       │       └── daily-work-report-media.entity.ts
 │       └── audit-log/               # Module Audit Trail & Security
 │           ├── audit-log.module.ts
 │           ├── audit-log.service.ts
@@ -315,7 +315,7 @@ backend/
     ├── auth.e2e-spec.ts
     ├── workspace.e2e-spec.ts
     ├── gantt.e2e-spec.ts
-    ├── daily-log.e2e-spec.ts
+    ├── daily-work-report.e2e-spec.ts
     └── jest-e2e.json
 ```
 
@@ -458,7 +458,7 @@ export interface IRealtimeService {
 
 ### 3.1 Skema Database DDL SQL Lengkap
 
-Skema di bawah ini telah disesuaikan sepenuhnya dengan entitas PRD Bab 7 (`users`, `workspaces`, `workspace_members`, `workspace_invitations`, `projects`, `tasks`, `daily_logs`, `daily_log_media`, dan `audit_logs`).
+Skema di bawah ini telah disesuaikan sepenuhnya dengan entitas PRD Bab 7 (`users`, `workspaces`, `workspace_members`, `workspace_invitations`, `projects`, `tasks`, `daily_work_reports`, `daily_work_report_media`, `daily_work_report_comments`, dan `audit_logs`).
 
 ```sql
 -- ==========================================
@@ -572,6 +572,8 @@ CREATE TABLE public.tasks (
     parent_id UUID REFERENCES public.tasks(id) ON DELETE CASCADE,
     predecessor_id UUID REFERENCES public.tasks(id) ON DELETE SET NULL,
     order_index INTEGER NOT NULL DEFAULT 0,
+    level INTEGER NOT NULL DEFAULT 0 CHECK (level >= 0),
+    wbs_code VARCHAR(50),
     progress_percent INTEGER NOT NULL DEFAULT 0 CHECK (progress_percent BETWEEN 0 AND 100),
     created_by UUID NOT NULL REFERENCES public.users(id) ON DELETE RESTRICT,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
@@ -580,9 +582,9 @@ CREATE TABLE public.tasks (
 );
 
 -- ==========================================
--- TABLE 7: daily_logs (Field Operational Logs)
+-- TABLE 7: daily_work_reports (Field Operational Logs)
 -- ==========================================
-CREATE TABLE public.daily_logs (
+CREATE TABLE public.daily_work_reports (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     project_id UUID NOT NULL REFERENCES public.projects(id) ON DELETE CASCADE,
     workspace_id UUID NOT NULL REFERENCES public.workspaces(id) ON DELETE CASCADE,
@@ -591,27 +593,37 @@ CREATE TABLE public.daily_logs (
     weather VARCHAR(50) NOT NULL CHECK (weather IN ('CERAH', 'HUJAN', 'BERAWAN', 'GERIMIS')),
     labor_count INTEGER NOT NULL CHECK (labor_count >= 0),
     notes TEXT,
-    status VARCHAR(50) NOT NULL DEFAULT 'DRAFT_LOG' CHECK (status IN ('DRAFT_LOG', 'SUBMITTED', 'VERIFIED_PM', 'REVISION_REQUESTED', 'ARCHIVED')),
-    revision_notes TEXT,
-    verified_by UUID REFERENCES public.users(id) ON DELETE SET NULL,
-    verified_at TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     CONSTRAINT uq_project_date_supervisor UNIQUE (project_id, log_date, supervisor_id)
 );
 
 -- ==========================================
--- TABLE 8: daily_log_media (Visual Photos Metadata)
+-- TABLE 8: daily_work_report_media (Visual Photos Metadata)
 -- ==========================================
-CREATE TABLE public.daily_log_media (
+CREATE TABLE public.daily_work_report_media (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    daily_log_id UUID NOT NULL REFERENCES public.daily_logs(id) ON DELETE CASCADE,
+    daily_work_report_id UUID NOT NULL REFERENCES public.daily_work_reports(id) ON DELETE CASCADE,
     workspace_id UUID NOT NULL REFERENCES public.workspaces(id) ON DELETE CASCADE,
     file_url TEXT NOT NULL,
     file_name VARCHAR(255) NOT NULL,
     file_size_bytes INTEGER NOT NULL CHECK (file_size_bytes <= 5242880), -- Max 5 MB
     mime_type VARCHAR(50) NOT NULL CHECK (mime_type IN ('image/jpeg', 'image/jpg', 'image/png')),
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+);
+
+-- ==========================================
+-- TABLE 10: daily_work_report_comments
+-- ==========================================
+CREATE TABLE public.daily_work_report_comments (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    daily_work_report_id UUID NOT NULL REFERENCES public.daily_work_reports(id) ON DELETE CASCADE,
+    workspace_id UUID NOT NULL REFERENCES public.workspaces(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+    parent_comment_id UUID REFERENCES public.daily_work_report_comments(id) ON DELETE CASCADE,
+    content TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );
 
 -- ==========================================
@@ -647,12 +659,12 @@ CREATE INDEX idx_tasks_project ON public.tasks USING btree (project_id);
 CREATE INDEX idx_tasks_workspace ON public.tasks USING btree (workspace_id);
 CREATE INDEX idx_tasks_parent ON public.tasks USING btree (parent_id);
 
-CREATE INDEX idx_daily_logs_project ON public.daily_logs USING btree (project_id);
-CREATE INDEX idx_daily_logs_workspace ON public.daily_logs USING btree (workspace_id);
-CREATE INDEX idx_daily_logs_supervisor ON public.daily_logs USING btree (supervisor_id);
-CREATE INDEX idx_daily_logs_date ON public.daily_logs USING btree (log_date);
+CREATE INDEX idx_daily_work_reports_project ON public.daily_work_reports USING btree (project_id);
+CREATE INDEX idx_daily_work_reports_workspace ON public.daily_work_reports USING btree (workspace_id);
+CREATE INDEX idx_daily_work_reports_supervisor ON public.daily_work_reports USING btree (supervisor_id);
+CREATE INDEX idx_daily_work_reports_date ON public.daily_work_reports USING btree (log_date);
 
-CREATE INDEX idx_daily_log_media_log ON public.daily_log_media USING btree (daily_log_id);
+CREATE INDEX idx_daily_work_report_media_log ON public.daily_work_report_media USING btree (daily_log_id);
 CREATE INDEX idx_audit_logs_workspace ON public.audit_logs USING btree (workspace_id);
 CREATE INDEX idx_audit_logs_created_at ON public.audit_logs USING btree (created_at);
 
@@ -665,7 +677,8 @@ CREATE TRIGGER trg_workspace_members_updated_at BEFORE UPDATE ON public.workspac
 CREATE TRIGGER trg_workspace_invitations_updated_at BEFORE UPDATE ON public.workspace_invitations FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER trg_projects_updated_at BEFORE UPDATE ON public.projects FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER trg_tasks_updated_at BEFORE UPDATE ON public.tasks FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-CREATE TRIGGER trg_daily_logs_updated_at BEFORE UPDATE ON public.daily_logs FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER trg_daily_work_reports_updated_at BEFORE UPDATE ON public.daily_work_reports FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER trg_daily_work_report_comments_updated_at BEFORE UPDATE ON public.daily_work_report_comments FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 ```
 
 ---
@@ -682,8 +695,9 @@ ALTER TABLE public.workspace_members ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.workspace_invitations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.projects ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.tasks ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.daily_logs ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.daily_log_media ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.daily_work_reports ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.daily_work_report_media ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.daily_work_report_comments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.audit_logs ENABLE ROW LEVEL SECURITY;
 
 -- ==========================================
@@ -791,10 +805,10 @@ CREATE POLICY "Tenant Isolation: Manage Tasks"
     );
 
 -- ==========================================
--- RLS POLICIES FOR: daily_logs & daily_log_media
+-- RLS POLICIES FOR: daily_work_reports & daily_work_report_media
 -- ==========================================
 CREATE POLICY "Tenant Isolation: View Daily Logs"
-    ON public.daily_logs FOR SELECT
+    ON public.daily_work_reports FOR SELECT
     USING (
         workspace_id IN (
             SELECT wm.workspace_id FROM public.workspace_members wm
@@ -803,18 +817,18 @@ CREATE POLICY "Tenant Isolation: View Daily Logs"
     );
 
 CREATE POLICY "Tenant Isolation: Create/Update Daily Logs"
-    ON public.daily_logs FOR ALL
+    ON public.daily_work_reports FOR ALL
     USING (
         EXISTS (
             SELECT 1 FROM public.workspace_members wm
-            WHERE wm.workspace_id = public.daily_logs.workspace_id
+            WHERE wm.workspace_id = public.daily_work_reports.workspace_id
             AND wm.user_id = auth.uid()
             AND wm.role IN ('OWNER', 'ADMIN', 'PROJECT_MANAGER', 'SUPERVISOR')
         )
     );
 
 CREATE POLICY "Tenant Isolation: View Daily Log Media"
-    ON public.daily_log_media FOR SELECT
+    ON public.daily_work_report_media FOR SELECT
     USING (
         workspace_id IN (
             SELECT wm.workspace_id FROM public.workspace_members wm
@@ -823,15 +837,46 @@ CREATE POLICY "Tenant Isolation: View Daily Log Media"
     );
 
 CREATE POLICY "Tenant Isolation: Manage Daily Log Media"
-    ON public.daily_log_media FOR ALL
+    ON public.daily_work_report_media FOR ALL
     USING (
         EXISTS (
             SELECT 1 FROM public.workspace_members wm
-            WHERE wm.workspace_id = public.daily_log_media.workspace_id
+            WHERE wm.workspace_id = public.daily_work_report_media.workspace_id
             AND wm.user_id = auth.uid()
             AND wm.role IN ('OWNER', 'ADMIN', 'PROJECT_MANAGER', 'SUPERVISOR')
         )
     );
+
+-- ==========================================
+-- ==========================================
+-- RLS POLICIES FOR: daily_work_report_comments
+-- ==========================================
+CREATE POLICY "Tenant Isolation: View Comments"
+    ON public.daily_work_report_comments FOR SELECT
+    USING (
+        workspace_id IN (
+            SELECT wm.workspace_id FROM public.workspace_members wm
+            WHERE wm.user_id = auth.uid()
+        )
+    );
+
+CREATE POLICY "Tenant Isolation: Create Comments"
+    ON public.daily_work_report_comments FOR INSERT
+    WITH CHECK (
+        workspace_id IN (
+            SELECT wm.workspace_id FROM public.workspace_members wm
+            WHERE wm.user_id = auth.uid()
+        )
+        AND auth.uid() = user_id
+    );
+
+CREATE POLICY "Tenant Isolation: Update Comments"
+    ON public.daily_work_report_comments FOR UPDATE
+    USING (auth.uid() = user_id);
+
+CREATE POLICY "Tenant Isolation: Delete Comments"
+    ON public.daily_work_report_comments FOR DELETE
+    USING (auth.uid() = user_id);
 
 -- ==========================================
 -- RLS POLICIES FOR: audit_logs
@@ -879,11 +924,13 @@ CREATE POLICY "Tenant Isolation: View Audit Logs"
 | `PATCH` | `/api/v1/workspaces/:wId/projects/:pId/tasks/:tId` | Update durasi/tanggal task (Drag & Drop) | ✅ Yes | `WorkspaceIsolationGuard(['OWNER', 'ADMIN', 'PROJECT_MANAGER'])` |
 | `PATCH` | `/api/v1/workspaces/:wId/projects/:pId/tasks/batch-order` | Reorder & update hirarki WBS batch | ✅ Yes | `WorkspaceIsolationGuard(['OWNER', 'ADMIN', 'PROJECT_MANAGER'])` |
 | `DELETE` | `/api/v1/workspaces/:wId/projects/:pId/tasks/:tId` | Hapus task dari Gantt Chart | ✅ Yes | `WorkspaceIsolationGuard(['OWNER', 'ADMIN', 'PROJECT_MANAGER'])` |
-| `GET` | `/api/v1/workspaces/:wId/projects/:pId/daily-logs` | Fetch laporan harian proyek | ✅ Yes | `WorkspaceIsolationGuard` |
-| `POST` | `/api/v1/workspaces/:wId/projects/:pId/daily-logs` | Submit laporan harian dari lapangan | ✅ Yes | `WorkspaceIsolationGuard(['SUPERVISOR', 'PROJECT_MANAGER', 'ADMIN', 'OWNER'])` |
-| `POST` | `/api/v1/workspaces/:wId/projects/:pId/daily-logs/:logId/media` | Upload foto bukti progres (max 5MB) | ✅ Yes | `WorkspaceIsolationGuard(['SUPERVISOR', 'PROJECT_MANAGER', 'ADMIN', 'OWNER'])` |
-| `PATCH` | `/api/v1/workspaces/:wId/projects/:pId/daily-logs/:logId/verify` | PM memverifikasi laporan harian | ✅ Yes | `WorkspaceIsolationGuard(['PROJECT_MANAGER', 'ADMIN', 'OWNER'])` |
-| `PATCH` | `/api/v1/workspaces/:wId/projects/:pId/daily-logs/:logId/revision` | PM meminta revisi laporan harian | ✅ Yes | `WorkspaceIsolationGuard(['PROJECT_MANAGER', 'ADMIN', 'OWNER'])` |
+| `GET` | `/api/v1/workspaces/:wId/projects/:pId/daily-work-reports` | Fetch laporan harian proyek | ✅ Yes | `WorkspaceIsolationGuard` |
+| `POST` | `/api/v1/workspaces/:wId/projects/:pId/daily-work-reports` | Submit laporan harian dari lapangan | ✅ Yes | `WorkspaceIsolationGuard(['SUPERVISOR', 'PROJECT_MANAGER', 'ADMIN', 'OWNER'])` |
+| `POST` | `/api/v1/workspaces/:wId/projects/:pId/daily-work-reports/:logId/media` | Upload foto bukti progres (max 5MB) | ✅ Yes | `WorkspaceIsolationGuard(['SUPERVISOR', 'PROJECT_MANAGER', 'ADMIN', 'OWNER'])` |
+| `GET` | `/api/v1/workspaces/:wId/projects/:pId/daily-work-reports/:reportId/comments` | Fetch comments | ✅ Yes | `WorkspaceIsolationGuard` |
+| `POST` | `/api/v1/workspaces/:wId/projects/:pId/daily-work-reports/:reportId/comments` | Create comment | ✅ Yes | `WorkspaceIsolationGuard` |
+| `PATCH` | `/api/v1/workspaces/:wId/projects/:pId/daily-work-reports/:reportId/comments/:commentId` | Edit own comment | ✅ Yes | `WorkspaceIsolationGuard` |
+| `DELETE` | `/api/v1/workspaces/:wId/projects/:pId/daily-work-reports/:reportId/comments/:commentId` | Delete own comment | ✅ Yes | `WorkspaceIsolationGuard` |
 | `GET` | `/api/v1/workspaces/:wId/audit-logs` | View log jejak audit keamanan | ✅ Yes | `WorkspaceIsolationGuard(['OWNER', 'ADMIN'])` |
 
 ---
@@ -1037,12 +1084,23 @@ export class UpdateTaskGanttDto {
   @IsUUID('4', { message: 'ID task predecessor harus berupa UUID v4' })
   @IsOptional()
   predecessorId?: string;
+
+  @ApiPropertyOptional({ example: 1 })
+  @IsInt()
+  @Min(0)
+  @IsOptional()
+  level?: number;
+
+  @ApiPropertyOptional({ example: '1.1.2' })
+  @IsString()
+  @IsOptional()
+  wbsCode?: string;
 }
 ```
 
-#### 4.3.4 Create Daily Log DTO (`create-daily-log.dto.ts`)
+#### 4.3.4 Create Daily Log DTO (`create-daily-work-report.dto.ts`)
 ```typescript
-// src/modules/daily-log/dto/create-daily-log.dto.ts
+// src/modules/daily-work-report/dto/create-daily-work-report.dto.ts
 import { IsNotEmpty, IsEnum, IsInt, Min, IsString, IsOptional, IsDateString } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
@@ -1053,7 +1111,7 @@ export enum WeatherEnum {
   GERIMIS = 'GERIMIS',
 }
 
-export class CreateDailyLogDto {
+export class CreateDailyWorkReportDto {
   @ApiProperty({ example: '2026-07-22', description: 'Tanggal laporan harian' })
   @IsDateString({}, { message: 'Format tanggal laporan tidak valid (YYYY-MM-DD)' })
   @IsNotEmpty({ message: 'Tanggal laporan wajib diisi' })
@@ -1076,6 +1134,28 @@ export class CreateDailyLogDto {
   notes?: string;
 }
 ```
+
+#### 4.3.5 Create & Update Comment DTOs (`create-comment.dto.ts`, `update-comment.dto.ts`)
+```typescript
+import { IsNotEmpty, IsString, IsUUID, IsOptional } from 'class-validator';
+
+export class CreateCommentDto {
+  @IsString()
+  @IsNotEmpty()
+  content: string;
+
+  @IsUUID()
+  @IsOptional()
+  parentCommentId?: string;
+}
+
+export class UpdateCommentDto {
+  @IsString()
+  @IsNotEmpty()
+  content: string;
+}
+```
+
 
 ---
 
@@ -1146,16 +1226,16 @@ export class CreateDailyLogDto {
 }
 ```
 
-#### Event 3: Daily Log Submission Alert (`dailylog:submitted`)
+#### Event 3: Daily Work Report Submission Alert (`daily_work_report:submitted`)
 * **Trigger:** Ketika Pengawas Lapangan berhasil mengirimkan laporan harian baru.
 * **Payload Example:**
 
 ```json
 {
-  "event": "dailylog:submitted",
+  "event": "daily_work_report:submitted",
   "channel": "workspace:w1234567-89ab-cdef-0123-456789abcdef",
   "payload": {
-    "logId": "dl-78901234-abcd-ef56",
+    "reportId": "dl-78901234-abcd-ef56",
     "projectId": "p9a8b7c6-5432-10fe-dcba-0987654321ba",
     "projectName": "Proyek Pembangunan Gedung A",
     "supervisorName": "Budi Pengawas",
@@ -1342,11 +1422,11 @@ export const queryKeys = {
     tasks: (workspaceId: string, projectId: string) => 
       ['workspaces', workspaceId, 'projects', projectId, 'gantt-tasks'] as const,
   },
-  dailyLogs: {
+  dailyWorkReports: {
     list: (workspaceId: string, projectId: string, filters: Record<string, any>) => 
-      ['workspaces', workspaceId, 'projects', projectId, 'daily-logs', filters] as const,
-    detail: (workspaceId: string, projectId: string, logId: string) => 
-      ['workspaces', workspaceId, 'projects', projectId, 'daily-logs', logId] as const,
+      ['workspaces', workspaceId, 'projects', projectId, 'daily-work-reports', filters] as const,
+    detail: (workspaceId: string, projectId: string, reportId: string) => 
+      ['workspaces', workspaceId, 'projects', projectId, 'daily-work-reports', reportId] as const,
   },
 };
 ```
@@ -1617,6 +1697,6 @@ REDIS_TTL_SECONDS=3600
 # ------------------------------------------------------------------------------
 # 5. THIRD-PARTY SERVICES & STORAGE
 # ------------------------------------------------------------------------------
-STORAGE_BUCKET_NAME=daily-log-media
+STORAGE_BUCKET_NAME=daily-work-report-media
 MAX_FILE_SIZE_BYTES=5242880                # 5 MB Max File Size per PRD FT-003
 ```
