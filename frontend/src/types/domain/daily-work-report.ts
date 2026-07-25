@@ -38,3 +38,26 @@ export interface DailyWorkReportFilter {
   startDate?: string;
   endDate?: string;
 }
+
+export interface DailyWorkReportComment {
+  id: string;
+  dailyWorkReportId: string;
+  workspaceId: string;
+  userId: string;
+  userName: string;
+  userAvatar?: string;
+  parentCommentId?: string;
+  content: string;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface CreateCommentInput {
+  content: string;
+  parentCommentId?: string;
+}
+
+export interface UpdateCommentInput {
+  content: string;
+}
+

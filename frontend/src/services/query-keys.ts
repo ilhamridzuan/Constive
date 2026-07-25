@@ -23,5 +23,7 @@ export const queryKeys = {
       ['workspace', workspaceId, 'project', projectId, 'dailyWorkReports'] as const,
     detail: (workspaceId: string, projectId: string, reportId: string) =>
       ['workspace', workspaceId, 'project', projectId, 'dailyWorkReports', reportId] as const,
+    comments: (workspaceId: string, projectId: string, reportId: string) =>
+      ['workspace', workspaceId, 'project', projectId, 'dailyWorkReports', reportId, 'comments'] as const,
   },
 };

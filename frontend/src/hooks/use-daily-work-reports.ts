@@ -1,8 +1,10 @@
 import { dailyWorkReportService } from '@/services/daily-work-report.service';
 import { queryKeys } from '@/services/query-keys';
 import {
+  CreateCommentInput,
   CreateDailyWorkReportInput,
   DailyWorkReportFilter,
+  UpdateCommentInput,
 } from '@/types/domain/daily-work-report';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
@@ -45,3 +47,74 @@ export function useCreateDailyWorkReport(workspaceId: string, projectId: string)
     },
   });
 }
+
+// --- Comment Hooks ---
+
+export function useDailyWorkReportComments(
+  workspaceId: string,
+  projectId: string,
+  reportId: string | null
+) {
+  return useQuery({
+    queryKey: reportId
+      ? queryKeys.dailyWorkReports.comments(workspaceId, projectId, reportId)
+      : [],
+    queryFn: () => dailyWorkReportService.getComments(projectId, reportId!),
+    enabled: !!workspaceId && !!projectId && !!reportId,
+  });
+}
+
+export function useCreateComment(
+  workspaceId: string,
+  projectId: string,
+  reportId: string
+) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: CreateCommentInput) =>
+      dailyWorkReportService.createComment(projectId, reportId, input),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.dailyWorkReports.comments(workspaceId, projectId, reportId),
+      });
+    },
+  });
+}
+
+export function useUpdateComment(
+  workspaceId: string,
+  projectId: string,
+  reportId: string
+) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ commentId, input }: { commentId: string; input: UpdateCommentInput }) =>
+      dailyWorkReportService.updateComment(projectId, reportId, commentId, input),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.dailyWorkReports.comments(workspaceId, projectId, reportId),
+      });
+    },
+  });
+}
+
+export function useDeleteComment(
+  workspaceId: string,
+  projectId: string,
+  reportId: string
+) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (commentId: string) =>
+      dailyWorkReportService.deleteComment(projectId, reportId, commentId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.dailyWorkReports.comments(workspaceId, projectId, reportId),
+      });
+    },
+  });
+}
+

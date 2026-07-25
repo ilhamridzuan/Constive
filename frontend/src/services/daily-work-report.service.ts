@@ -1,7 +1,10 @@
 import {
+  CreateCommentInput,
   CreateDailyWorkReportInput,
   DailyWorkReport,
+  DailyWorkReportComment,
   DailyWorkReportFilter,
+  UpdateCommentInput,
 } from '@/types/domain/daily-work-report';
 
 // Mock initial database for daily work reports (API Endpoint: /daily-work-reports)
@@ -212,6 +215,38 @@ let mockDailyWorkReports: DailyWorkReport[] = [
   },
 ];
 
+let mockDailyWorkReportComments: DailyWorkReportComment[] = [
+  {
+    id: 'cmt-1',
+    dailyWorkReportId: 'report-101',
+    workspaceId: 'ws-1',
+    userId: 'sup-2',
+    userName: 'Budi Pengawas',
+    content: 'Mohon pastikan pembersihan bekisting balok sebelum pengecoran besok pagi.',
+    createdAt: '2026-07-25T09:15:00Z',
+  },
+  {
+    id: 'cmt-2',
+    dailyWorkReportId: 'report-101',
+    workspaceId: 'ws-1',
+    userId: 'sup-1',
+    userName: 'Joko Mandor',
+    parentCommentId: 'cmt-1',
+    content: 'Siap Pak Budi, tim malam akan melakukan pembersihan area balok.',
+    createdAt: '2026-07-25T09:45:00Z',
+  },
+  {
+    id: 'cmt-3',
+    dailyWorkReportId: 'report-101',
+    workspaceId: 'ws-1',
+    userId: 'pm-1',
+    userName: 'Dewi Project Manager',
+    content: 'Bagus. Foto inspeksi pembesian sudah lengkap.',
+    createdAt: '2026-07-25T10:30:00Z',
+  },
+];
+
+
 export const dailyWorkReportService = {
   // GET /daily-work-reports
   async getDailyWorkReports(
@@ -315,4 +350,82 @@ export const dailyWorkReportService = {
     }
     return 'https://images.unsplash.com/photo-1541888946425-d0fbb186a5b7?auto=format&fit=crop&w=800&q=80';
   },
+
+  // --- Comments API Methods ---
+
+  // GET /daily-work-reports/:reportId/comments
+  async getComments(projectId: string, reportId: string): Promise<DailyWorkReportComment[]> {
+    await new Promise((res) => setTimeout(res, 150));
+    return mockDailyWorkReportComments.filter((c) => c.dailyWorkReportId === reportId);
+  },
+
+  // POST /daily-work-reports/:reportId/comments
+  async createComment(
+    projectId: string,
+    reportId: string,
+    input: CreateCommentInput,
+    currentUserId: string = 'sup-1',
+    currentUserName: string = 'Joko Mandor'
+  ): Promise<DailyWorkReportComment> {
+    await new Promise((res) => setTimeout(res, 250));
+    const newComment: DailyWorkReportComment = {
+      id: `cmt-${Date.now()}`,
+      dailyWorkReportId: reportId,
+      workspaceId: 'ws-1',
+      userId: currentUserId,
+      userName: currentUserName,
+      parentCommentId: input.parentCommentId,
+      content: input.content,
+      createdAt: new Date().toISOString(),
+    };
+    mockDailyWorkReportComments.push(newComment);
+    return newComment;
+  },
+
+  // PATCH /daily-work-reports/:reportId/comments/:commentId
+  async updateComment(
+    projectId: string,
+    reportId: string,
+    commentId: string,
+    input: UpdateCommentInput
+  ): Promise<DailyWorkReportComment> {
+    await new Promise((res) => setTimeout(res, 200));
+    const index = mockDailyWorkReportComments.findIndex(
+      (c) => c.id === commentId && c.dailyWorkReportId === reportId
+    );
+    if (index === -1) {
+      throw new Error('Komentar tidak ditemukan');
+    }
+    const updated = {
+      ...mockDailyWorkReportComments[index],
+      content: input.content,
+      updatedAt: new Date().toISOString(),
+    };
+    mockDailyWorkReportComments[index] = updated;
+    return updated;
+  },
+
+  // DELETE /daily-work-reports/:reportId/comments/:commentId
+  async deleteComment(
+    projectId: string,
+    reportId: string,
+    commentId: string
+  ): Promise<void> {
+    await new Promise((res) => setTimeout(res, 200));
+    const idsToDelete = new Set<string>([commentId]);
+    let addedMore = true;
+    while (addedMore) {
+      addedMore = false;
+      for (const c of mockDailyWorkReportComments) {
+        if (c.parentCommentId && idsToDelete.has(c.parentCommentId) && !idsToDelete.has(c.id)) {
+          idsToDelete.add(c.id);
+          addedMore = true;
+        }
+      }
+    }
+    mockDailyWorkReportComments = mockDailyWorkReportComments.filter(
+      (c) => !idsToDelete.has(c.id)
+    );
+  },
 };
+
