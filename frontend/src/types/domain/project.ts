@@ -14,7 +14,7 @@ export interface Project {
   updatedAt: string;
   progressPercent?: number;
   taskCount?: number;
-  dailyLogCount?: number;
+  dailyWorkReportCount?: number;
 }
 
 export interface CreateProjectInput {

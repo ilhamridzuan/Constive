@@ -4,7 +4,10 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Sheet } from '@/components/ui/sheet';
 import { Textarea } from '@/components/ui/textarea';
-import { DailyLog, DailyLogStatus } from '@/types/domain/daily-log';
+import {
+  DailyWorkReport,
+  DailyWorkReportStatus,
+} from '@/types/domain/daily-work-report';
 import {
   AlertTriangle,
   Camera,
@@ -19,23 +22,23 @@ import {
 } from 'lucide-react';
 import React, { useState } from 'react';
 
-interface DailyLogDetailSheetProps {
-  log: DailyLog | null;
+interface DailyWorkReportDetailSheetProps {
+  report: DailyWorkReport | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onVerify?: (logId: string) => void;
-  onRequestRevision?: (logId: string, notes: string) => void;
+  onVerify?: (reportId: string) => void;
+  onRequestRevision?: (reportId: string, notes: string) => void;
   isPM?: boolean;
 }
 
-export function DailyLogDetailSheet({
-  log,
+export function DailyWorkReportDetailSheet({
+  report,
   open,
   onOpenChange,
   onVerify,
   onRequestRevision,
   isPM = true,
-}: DailyLogDetailSheetProps) {
+}: DailyWorkReportDetailSheetProps) {
   const [showRevisionForm, setShowRevisionForm] = useState(false);
   const [revisionInput, setRevisionInput] = useState('');
   const [revisionError, setRevisionError] = useState<string | null>(null);
@@ -43,11 +46,11 @@ export function DailyLogDetailSheet({
   // Lightbox State
   const [activePhotoIndex, setActivePhotoIndex] = useState<number | null>(null);
 
-  if (!log) return null;
+  if (!report) return null;
 
   const handleVerify = () => {
     if (onVerify) {
-      onVerify(log.id);
+      onVerify(report.id);
       onOpenChange(false);
     }
   };
@@ -58,7 +61,7 @@ export function DailyLogDetailSheet({
       return;
     }
     if (onRequestRevision) {
-      onRequestRevision(log.id, revisionInput.trim());
+      onRequestRevision(report.id, revisionInput.trim());
       setShowRevisionForm(false);
       setRevisionInput('');
       setRevisionError(null);
@@ -66,7 +69,7 @@ export function DailyLogDetailSheet({
     }
   };
 
-  const getStatusBadge = (status: DailyLogStatus) => {
+  const getStatusBadge = (status: DailyWorkReportStatus) => {
     switch (status) {
       case 'VERIFIED_PM':
         return <Badge variant="success">Verifikasi PM</Badge>;
@@ -101,8 +104,8 @@ export function DailyLogDetailSheet({
       <Sheet
         open={open}
         onOpenChange={onOpenChange}
-        title={`Laporan Harian — ${log.logDate}`}
-        description={`Dibuat oleh ${log.supervisorName}`}
+        title={`Laporan Harian — ${report.logDate}`}
+        description={`Dibuat oleh ${report.supervisorName}`}
       >
         <div className="space-y-5">
           {/* Header Status & Revision Banner */}
@@ -110,16 +113,16 @@ export function DailyLogDetailSheet({
             <span className="text-xs font-semibold text-muted-foreground uppercase">
               Status Laporan
             </span>
-            <div>{getStatusBadge(log.status)}</div>
+            <div>{getStatusBadge(report.status)}</div>
           </div>
 
           {/* Revision Requested Warning Banner */}
-          {log.status === 'REVISION_REQUESTED' && log.revisionNotes && (
+          {report.status === 'REVISION_REQUESTED' && report.revisionNotes && (
             <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg text-xs text-amber-900 dark:text-amber-100 space-y-1">
               <div className="flex items-center gap-1.5 font-bold">
                 <AlertTriangle className="h-4 w-4 text-amber-500" /> Catatan Permintaan Revisi PM:
               </div>
-              <p className="pl-5 text-amber-800 dark:text-amber-200">{log.revisionNotes}</p>
+              <p className="pl-5 text-amber-800 dark:text-amber-200">{report.revisionNotes}</p>
             </div>
           )}
 
@@ -128,20 +131,20 @@ export function DailyLogDetailSheet({
             <div>
               <span className="text-[11px] text-muted-foreground block">Cuaca</span>
               <span className="text-xs font-semibold text-foreground">
-                {getWeatherLabel(log.weather)}
+                {getWeatherLabel(report.weather)}
               </span>
             </div>
             <div>
               <span className="text-[11px] text-muted-foreground block">Jumlah Pekerja</span>
               <span className="text-xs font-semibold text-foreground flex items-center justify-center gap-1">
-                <Users className="h-3.5 w-3.5 text-primary" /> {log.laborCount} Orang
+                <Users className="h-3.5 w-3.5 text-primary" /> {report.laborCount} Orang
               </span>
             </div>
             <div>
               <span className="text-[11px] text-muted-foreground block">Waktu Kirim</span>
               <span className="text-xs font-semibold text-foreground flex items-center justify-center gap-1">
                 <Clock className="h-3.5 w-3.5 text-muted-foreground" />
-                {new Date(log.createdAt).toLocaleTimeString('id-ID', {
+                {new Date(report.createdAt).toLocaleTimeString('id-ID', {
                   hour: '2-digit',
                   minute: '2-digit',
                 })}
@@ -155,7 +158,7 @@ export function DailyLogDetailSheet({
               Catatan & Kendala Lapangan
             </h4>
             <div className="p-3 bg-card border border-border rounded-lg text-xs text-foreground leading-relaxed whitespace-pre-line">
-              {log.notes}
+              {report.notes}
             </div>
           </div>
 
@@ -163,14 +166,14 @@ export function DailyLogDetailSheet({
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <h4 className="text-xs font-semibold text-foreground uppercase tracking-wider flex items-center gap-1">
-                <Camera className="h-3.5 w-3.5 text-primary" /> Dokumentasi Foto ({log.media.length})
+                <Camera className="h-3.5 w-3.5 text-primary" /> Dokumentasi Foto ({report.media.length})
               </h4>
               <span className="text-[11px] text-muted-foreground">Klik foto untuk memperbesar</span>
             </div>
 
-            {log.media.length > 0 ? (
+            {report.media.length > 0 ? (
               <div className="grid grid-cols-3 gap-2">
-                {log.media.map((item, idx) => (
+                {report.media.map((item, idx) => (
                   <button
                     key={item.id}
                     type="button"
@@ -195,12 +198,12 @@ export function DailyLogDetailSheet({
           {/* Supervisor Information */}
           <div className="pt-2 border-t border-border flex items-center justify-between text-xs text-muted-foreground">
             <span className="flex items-center gap-1">
-              <User className="h-3.5 w-3.5 text-primary" /> Pelapor: <strong className="text-foreground">{log.supervisorName}</strong>
+              <User className="h-3.5 w-3.5 text-primary" /> Pelapor: <strong className="text-foreground">{report.supervisorName}</strong>
             </span>
           </div>
 
           {/* PM Review Actions Section */}
-          {isPM && log.status === 'SUBMITTED' && (
+          {isPM && report.status === 'SUBMITTED' && (
             <div className="pt-4 border-t border-border space-y-3">
               <h4 className="text-xs font-semibold text-foreground uppercase tracking-wider">
                 Tindakan Peninjauan Project Manager
@@ -274,7 +277,7 @@ export function DailyLogDetailSheet({
       </Sheet>
 
       {/* Full-Screen Lightbox Modal */}
-      {activePhotoIndex !== null && log.media[activePhotoIndex] && (
+      {activePhotoIndex !== null && report.media[activePhotoIndex] && (
         <div className="fixed inset-0 z-[80] bg-black/90 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in">
           {/* Close Button */}
           <button
@@ -297,7 +300,7 @@ export function DailyLogDetailSheet({
           )}
 
           {/* Navigation Next */}
-          {activePhotoIndex < log.media.length - 1 && (
+          {activePhotoIndex < report.media.length - 1 && (
             <button
               type="button"
               onClick={() => setActivePhotoIndex(activePhotoIndex + 1)}
@@ -310,16 +313,16 @@ export function DailyLogDetailSheet({
           {/* Main Photo Display */}
           <div className="max-w-4xl max-h-[85vh] flex flex-col items-center justify-center space-y-2">
             <img
-              src={log.media[activePhotoIndex].fileUrl}
-              alt={log.media[activePhotoIndex].fileName || 'Full View'}
+              src={report.media[activePhotoIndex].fileUrl}
+              alt={report.media[activePhotoIndex].fileName || 'Full View'}
               className="max-w-full max-h-[75vh] object-contain rounded-lg shadow-2xl"
             />
             <div className="text-center text-white text-xs space-y-0.5">
               <p className="font-semibold">
-                {log.media[activePhotoIndex].fileName || `Foto ${activePhotoIndex + 1}`}
+                {report.media[activePhotoIndex].fileName || `Foto ${activePhotoIndex + 1}`}
               </p>
               <p className="text-gray-400">
-                Foto {activePhotoIndex + 1} dari {log.media.length} · {log.logDate}
+                Foto {activePhotoIndex + 1} dari {report.media.length} · {report.logDate}
               </p>
             </div>
           </div>

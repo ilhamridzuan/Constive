@@ -1,18 +1,25 @@
 'use client';
 
-import { DailyLogCard } from '@/components/features/daily-log/daily-log-card';
-import { DailyLogDetailSheet } from '@/components/features/daily-log/daily-log-detail-sheet';
-import { DailyLogFilters } from '@/components/features/daily-log/daily-log-filters';
-import { DailyLogTable } from '@/components/features/daily-log/daily-log-table';
+import { DailyWorkReportCard } from '@/components/features/daily-work-report/daily-work-report-card';
+import { DailyWorkReportDetailSheet } from '@/components/features/daily-work-report/daily-work-report-detail-sheet';
+import { DailyWorkReportFilters } from '@/components/features/daily-work-report/daily-work-report-filters';
+import { DailyWorkReportTable } from '@/components/features/daily-work-report/daily-work-report-table';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { useDailyLogs, useRequestRevisionDailyLog, useVerifyDailyLog } from '@/hooks/use-daily-logs';
-import { DailyLog, DailyLogFilter } from '@/types/domain/daily-log';
+import {
+  useDailyWorkReports,
+  useRequestRevisionDailyWorkReport,
+  useVerifyDailyWorkReport,
+} from '@/hooks/use-daily-work-reports';
+import {
+  DailyWorkReport,
+  DailyWorkReportFilter,
+} from '@/types/domain/daily-work-report';
 import { AlertCircle, CheckCircle2, Clock, FileText, Plus, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
 import { use, useState } from 'react';
 
-export default function ProjectDailyLogsPage({
+export default function ProjectDailyWorkReportsPage({
   params,
 }: {
   params: Promise<{ workspaceId: string; projectId: string }>;
@@ -20,38 +27,42 @@ export default function ProjectDailyLogsPage({
   const { workspaceId, projectId } = use(params);
 
   // Filter state
-  const [filter, setFilter] = useState<DailyLogFilter>({
+  const [filter, setFilter] = useState<DailyWorkReportFilter>({
     status: 'ALL',
     weather: 'ALL',
     searchQuery: '',
   });
 
-  // Selected Log State for Sheet Review
-  const [selectedLog, setSelectedLog] = useState<DailyLog | null>(null);
+  // Selected Report State for Sheet Review
+  const [selectedReport, setSelectedReport] = useState<DailyWorkReport | null>(null);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
 
   // TanStack Query & Mutations
-  const { data: logs = [], isLoading, refetch } = useDailyLogs(workspaceId, projectId, filter);
-  const verifyMutation = useVerifyDailyLog(workspaceId, projectId);
-  const revisionMutation = useRequestRevisionDailyLog(workspaceId, projectId);
+  const {
+    data: reports = [],
+    isLoading,
+    refetch,
+  } = useDailyWorkReports(workspaceId, projectId, filter);
+  const verifyMutation = useVerifyDailyWorkReport(workspaceId, projectId);
+  const revisionMutation = useRequestRevisionDailyWorkReport(workspaceId, projectId);
 
-  const handleOpenDetail = (log: DailyLog) => {
-    setSelectedLog(log);
+  const handleOpenDetail = (report: DailyWorkReport) => {
+    setSelectedReport(report);
     setIsSheetOpen(true);
   };
 
-  const handleVerify = (logId: string) => {
-    verifyMutation.mutate(logId);
+  const handleVerify = (reportId: string) => {
+    verifyMutation.mutate(reportId);
   };
 
-  const handleRequestRevision = (logId: string, notes: string) => {
-    revisionMutation.mutate({ logId, revisionNotes: notes });
+  const handleRequestRevision = (reportId: string, notes: string) => {
+    revisionMutation.mutate({ reportId, revisionNotes: notes });
   };
 
   // Status metrics summary
-  const submittedCount = logs.filter((l) => l.status === 'SUBMITTED').length;
-  const verifiedCount = logs.filter((l) => l.status === 'VERIFIED_PM').length;
-  const revisionCount = logs.filter((l) => l.status === 'REVISION_REQUESTED').length;
+  const submittedCount = reports.filter((r) => r.status === 'SUBMITTED').length;
+  const verifiedCount = reports.filter((r) => r.status === 'VERIFIED_PM').length;
+  const revisionCount = reports.filter((r) => r.status === 'REVISION_REQUESTED').length;
 
   return (
     <div className="space-y-4 max-w-7xl mx-auto pb-8">
@@ -78,7 +89,7 @@ export default function ProjectDailyLogsPage({
           </Button>
 
           <Link
-            href={`/workspace/${workspaceId}/projects/${projectId}/daily-logs/new`}
+            href={`/workspace/${workspaceId}/projects/${projectId}/daily-work-reports/new`}
             className="w-full sm:w-auto"
           >
             <Button size="sm" className="w-full sm:w-auto gap-1.5 h-9 text-xs font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs">
@@ -128,7 +139,7 @@ export default function ProjectDailyLogsPage({
       </div>
 
       {/* Search & Filter Toolbar */}
-      <DailyLogFilters filter={filter} onChange={setFilter} />
+      <DailyWorkReportFilters filter={filter} onChange={setFilter} />
 
       {/* Loading Skeleton */}
       {isLoading ? (
@@ -139,12 +150,12 @@ export default function ProjectDailyLogsPage({
         <>
           {/* Desktop Table View */}
           <div className="hidden md:block">
-            <DailyLogTable
-              logs={logs}
-              onSelectLog={handleOpenDetail}
-              onVerifyLog={handleVerify}
-              onRequestRevision={(log) => {
-                setSelectedLog(log);
+            <DailyWorkReportTable
+              reports={reports}
+              onSelectReport={handleOpenDetail}
+              onVerifyReport={handleVerify}
+              onRequestRevision={(report) => {
+                setSelectedReport(report);
                 setIsSheetOpen(true);
               }}
               isPM={true}
@@ -153,16 +164,16 @@ export default function ProjectDailyLogsPage({
 
           {/* Mobile Card List View */}
           <div className="md:hidden space-y-3">
-            {logs.length === 0 ? (
+            {reports.length === 0 ? (
               <div className="p-6 text-center border border-dashed border-border rounded-lg bg-card text-xs text-muted-foreground">
                 Belum ada laporan harian yang sesuai filter.
               </div>
             ) : (
-              logs.map((log) => (
-                <DailyLogCard
-                  key={log.id}
-                  log={log}
-                  onClick={() => handleOpenDetail(log)}
+              reports.map((report) => (
+                <DailyWorkReportCard
+                  key={report.id}
+                  report={report}
+                  onClick={() => handleOpenDetail(report)}
                 />
               ))
             )}
@@ -171,8 +182,8 @@ export default function ProjectDailyLogsPage({
       )}
 
       {/* Detail & Review Sheet */}
-      <DailyLogDetailSheet
-        log={selectedLog}
+      <DailyWorkReportDetailSheet
+        report={selectedReport}
         open={isSheetOpen}
         onOpenChange={setIsSheetOpen}
         onVerify={handleVerify}

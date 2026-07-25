@@ -27,7 +27,7 @@ export function ProjectSidebarNav({ workspaceId, projectId }: ProjectSidebarNavP
     },
     {
       title: 'Laporan Harian',
-      href: `${baseUrl}/daily-logs`,
+      href: `${baseUrl}/daily-work-reports`,
       icon: FileText,
     },
     {

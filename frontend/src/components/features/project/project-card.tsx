@@ -110,7 +110,7 @@ export function ProjectCard({ project, workspaceId, userRole = 'ADMIN' }: Projec
               <Activity className="h-3 w-3 text-purple-500" /> {project.taskCount || 0} tasks
             </span>
             <span className="flex items-center gap-1" title="Jumlah Laporan Harian">
-              <FileText className="h-3 w-3 text-amber-500" /> {project.dailyLogCount || 0} logs
+              <FileText className="h-3 w-3 text-amber-500" /> {project.dailyWorkReportCount || 0} laporan
             </span>
           </div>
 

@@ -46,7 +46,7 @@ export function Sidebar() {
         },
         {
           title: 'Laporan Harian',
-          href: `/workspace/${wsId}/projects/${projId}/daily-logs`,
+          href: `/workspace/${wsId}/projects/${projId}/daily-work-reports`,
           icon: FileText,
         },
         {

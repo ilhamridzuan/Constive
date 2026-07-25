@@ -1,6 +1,6 @@
 'use client';
 
-import { WeatherCondition } from '@/types/domain/daily-log';
+import { WeatherCondition } from '@/types/domain/daily-work-report';
 import { Cloud, CloudDrizzle, CloudRain, Sun } from 'lucide-react';
 import { cn } from '@/lib/utils';
 

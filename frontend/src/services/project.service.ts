@@ -21,7 +21,7 @@ const MOCK_PROJECTS: Record<string, Project[]> = {
       updatedAt: '2026-07-22T00:00:00Z',
       progressPercent: 68,
       taskCount: 45,
-      dailyLogCount: 120,
+      dailyWorkReportCount: 120,
     },
     {
       id: 'p-102',
@@ -37,7 +37,7 @@ const MOCK_PROJECTS: Record<string, Project[]> = {
       updatedAt: '2026-07-20T00:00:00Z',
       progressPercent: 42,
       taskCount: 28,
-      dailyLogCount: 65,
+      dailyWorkReportCount: 65,
     },
     {
       id: 'p-103',
@@ -53,7 +53,7 @@ const MOCK_PROJECTS: Record<string, Project[]> = {
       updatedAt: '2026-06-30T00:00:00Z',
       progressPercent: 100,
       taskCount: 30,
-      dailyLogCount: 90,
+      dailyWorkReportCount: 90,
     },
     {
       id: 'p-104',
@@ -69,7 +69,7 @@ const MOCK_PROJECTS: Record<string, Project[]> = {
       updatedAt: '2026-07-01T00:00:00Z',
       progressPercent: 0,
       taskCount: 12,
-      dailyLogCount: 0,
+      dailyWorkReportCount: 0,
     },
   ],
 };
@@ -155,7 +155,7 @@ export const projectService = {
       updatedAt: new Date().toISOString(),
       progressPercent: 0,
       taskCount: 0,
-      dailyLogCount: 0,
+      dailyWorkReportCount: 0,
     };
 
     if (!MOCK_PROJECTS[workspaceId]) {
