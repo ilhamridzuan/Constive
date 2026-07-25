@@ -1,22 +1,25 @@
 'use client';
 
-import { PhotoPreviewItem, PhotoUploader } from '@/components/features/daily-log/photo-uploader';
-import { WeatherSelector } from '@/components/features/daily-log/weather-selector';
+import {
+  PhotoPreviewItem,
+  PhotoUploader,
+} from '@/components/features/daily-work-report/photo-uploader';
+import { WeatherSelector } from '@/components/features/daily-work-report/weather-selector';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { useCreateDailyLog } from '@/hooks/use-daily-logs';
-import { useDailyLogDraft } from '@/hooks/use-daily-log-draft';
-import { WeatherCondition } from '@/types/domain/daily-log';
+import { useCreateDailyWorkReport } from '@/hooks/use-daily-work-reports';
+import { useDailyWorkReportDraft } from '@/hooks/use-daily-work-report-draft';
+import { WeatherCondition } from '@/types/domain/daily-work-report';
 import { ArrowLeft, Check, CheckCircle2, FileText, Minus, Plus, Save, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { use, useEffect, useState } from 'react';
 
-export default function NewDailyLogPage({
+export default function NewDailyWorkReportPage({
   params,
 }: {
   params: Promise<{ workspaceId: string; projectId: string }>;
@@ -37,12 +40,12 @@ export default function NewDailyLogPage({
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   // Draft persistence hook
-  const { loadDraft, saveDraft, clearDraft, lastSaved } = useDailyLogDraft(
+  const { loadDraft, saveDraft, clearDraft, lastSaved } = useDailyWorkReportDraft(
     projectId,
     logDate
   );
 
-  const createLogMutation = useCreateDailyLog(workspaceId, projectId);
+  const createReportMutation = useCreateDailyWorkReport(workspaceId, projectId);
 
   // Hydrate draft on mount
   useEffect(() => {
@@ -90,7 +93,7 @@ export default function NewDailyLogPage({
 
     setIsSubmitting(true);
     try {
-      await createLogMutation.mutateAsync({
+      await createReportMutation.mutateAsync({
         logDate,
         weather,
         laborCount,
@@ -98,7 +101,7 @@ export default function NewDailyLogPage({
         mediaUrls: photos.map((p) => p.url),
       });
       clearDraft();
-      router.push(`/workspace/${workspaceId}/projects/${projectId}/daily-logs`);
+      router.push(`/workspace/${workspaceId}/projects/${projectId}/daily-work-reports`);
     } catch (err: any) {
       setSubmitError(err.message || 'Gagal mengirim laporan harian. Silakan coba lagi.');
     } finally {
@@ -111,7 +114,7 @@ export default function NewDailyLogPage({
       {/* Top Breadcrumb Header */}
       <div className="flex items-center justify-between pt-1">
         <Link
-          href={`/workspace/${workspaceId}/projects/${projectId}/daily-logs`}
+          href={`/workspace/${workspaceId}/projects/${projectId}/daily-work-reports`}
           className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
         >
           <ArrowLeft className="h-4 w-4" /> Kembali ke Daftar Laporan
@@ -273,7 +276,7 @@ export default function NewDailyLogPage({
             variant="outline"
             onClick={() => {
               saveDraft({ logDate, weather, laborCount, notes, photoUrls: photos.map((p) => p.url) });
-              router.push(`/workspace/${workspaceId}/projects/${projectId}/daily-logs`);
+              router.push(`/workspace/${workspaceId}/projects/${projectId}/daily-work-reports`);
             }}
             disabled={isSubmitting}
             className="w-full sm:w-auto flex-1 h-12 text-xs font-semibold border-border"

@@ -1,14 +1,13 @@
 import {
-  CreateDailyLogInput,
-  DailyLog,
-  DailyLogFilter,
-  WeatherCondition,
-} from '@/types/domain/daily-log';
+  CreateDailyWorkReportInput,
+  DailyWorkReport,
+  DailyWorkReportFilter,
+} from '@/types/domain/daily-work-report';
 
-// Mock initial database for daily logs
-let mockDailyLogs: DailyLog[] = [
+// Mock initial database for daily work reports (API Endpoint: /daily-work-reports)
+let mockDailyWorkReports: DailyWorkReport[] = [
   {
-    id: 'log-101',
+    id: 'report-101',
     projectId: 'proj-1',
     supervisorId: 'sup-1',
     supervisorName: 'Joko Mandor',
@@ -22,7 +21,7 @@ let mockDailyLogs: DailyLog[] = [
     media: [
       {
         id: 'med-1',
-        dailyLogId: 'log-101',
+        dailyWorkReportId: 'report-101',
         fileUrl:
           'https://images.unsplash.com/photo-1541888946425-d0fbb186a5b7?auto=format&fit=crop&w=800&q=80',
         fileName: 'pengecoran_lantai_1.jpg',
@@ -31,7 +30,7 @@ let mockDailyLogs: DailyLog[] = [
       },
       {
         id: 'med-2',
-        dailyLogId: 'log-101',
+        dailyWorkReportId: 'report-101',
         fileUrl:
           'https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=800&q=80',
         fileName: 'inspeksi_pembesian.jpg',
@@ -40,7 +39,7 @@ let mockDailyLogs: DailyLog[] = [
       },
       {
         id: 'med-3',
-        dailyLogId: 'log-101',
+        dailyWorkReportId: 'report-101',
         fileUrl:
           'https://images.unsplash.com/photo-1503387762-592deb58ef4e?auto=format&fit=crop&w=800&q=80',
         fileName: 'situasi_lapangan.jpg',
@@ -51,7 +50,7 @@ let mockDailyLogs: DailyLog[] = [
     createdAt: '2026-07-25T08:40:00Z',
   },
   {
-    id: 'log-102',
+    id: 'report-102',
     projectId: 'proj-1',
     supervisorId: 'sup-2',
     supervisorName: 'Budi Pengawas',
@@ -65,7 +64,7 @@ let mockDailyLogs: DailyLog[] = [
     media: [
       {
         id: 'med-4',
-        dailyLogId: 'log-102',
+        dailyWorkReportId: 'report-102',
         fileUrl:
           'https://images.unsplash.com/photo-1581094794329-c8112a89af12?auto=format&fit=crop&w=800&q=80',
         fileName: 'bekisting_balok.jpg',
@@ -76,7 +75,7 @@ let mockDailyLogs: DailyLog[] = [
     createdAt: '2026-07-24T16:15:00Z',
   },
   {
-    id: 'log-103',
+    id: 'report-103',
     projectId: 'proj-1',
     supervisorId: 'sup-1',
     supervisorName: 'Joko Mandor',
@@ -92,7 +91,7 @@ let mockDailyLogs: DailyLog[] = [
     media: [
       {
         id: 'med-5',
-        dailyLogId: 'log-103',
+        dailyWorkReportId: 'report-103',
         fileUrl:
           'https://images.unsplash.com/photo-1590069261209-f8e9b8642343?auto=format&fit=crop&w=800&q=80',
         fileName: 'area_fabrikasi.jpg',
@@ -103,7 +102,7 @@ let mockDailyLogs: DailyLog[] = [
     createdAt: '2026-07-23T15:20:00Z',
   },
   {
-    id: 'log-104',
+    id: 'report-104',
     projectId: 'proj-1',
     supervisorId: 'sup-3',
     supervisorName: 'Ahmad Mandor',
@@ -117,7 +116,7 @@ let mockDailyLogs: DailyLog[] = [
     media: [
       {
         id: 'med-6',
-        dailyLogId: 'log-104',
+        dailyWorkReportId: 'report-104',
         fileUrl:
           'https://images.unsplash.com/photo-1578575437130-527eed3abbec?auto=format&fit=crop&w=800&q=80',
         fileName: 'galian_tanah.jpg',
@@ -126,7 +125,7 @@ let mockDailyLogs: DailyLog[] = [
       },
       {
         id: 'med-7',
-        dailyLogId: 'log-104',
+        dailyWorkReportId: 'report-104',
         fileUrl:
           'https://images.unsplash.com/photo-1517646287270-a5a9ca602e5c?auto=format&fit=crop&w=800&q=80',
         fileName: 'alat_berat_excavator.jpg',
@@ -137,7 +136,7 @@ let mockDailyLogs: DailyLog[] = [
     createdAt: '2026-07-22T17:15:00Z',
   },
   {
-    id: 'log-105',
+    id: 'report-105',
     projectId: 'proj-1',
     supervisorId: 'sup-2',
     supervisorName: 'Budi Pengawas',
@@ -151,7 +150,7 @@ let mockDailyLogs: DailyLog[] = [
     media: [
       {
         id: 'med-8',
-        dailyLogId: 'log-105',
+        dailyWorkReportId: 'report-105',
         fileUrl:
           'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?auto=format&fit=crop&w=800&q=80',
         fileName: 'instalasi_pipa.jpg',
@@ -162,7 +161,7 @@ let mockDailyLogs: DailyLog[] = [
     createdAt: '2026-07-21T16:45:00Z',
   },
   {
-    id: 'log-106',
+    id: 'report-106',
     projectId: 'proj-1',
     supervisorId: 'sup-1',
     supervisorName: 'Joko Mandor',
@@ -176,7 +175,7 @@ let mockDailyLogs: DailyLog[] = [
     media: [
       {
         id: 'med-9',
-        dailyLogId: 'log-106',
+        dailyWorkReportId: 'report-106',
         fileUrl:
           'https://images.unsplash.com/photo-1541888946425-d0fbb186a5b7?auto=format&fit=crop&w=800&q=80',
         fileName: 'pengecoran_plat_lantai.jpg',
@@ -185,7 +184,7 @@ let mockDailyLogs: DailyLog[] = [
       },
       {
         id: 'med-10',
-        dailyLogId: 'log-106',
+        dailyWorkReportId: 'report-106',
         fileUrl:
           'https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=800&q=80',
         fileName: 'slump_test_beton.jpg',
@@ -196,7 +195,7 @@ let mockDailyLogs: DailyLog[] = [
     createdAt: '2026-07-20T18:20:00Z',
   },
   {
-    id: 'log-107',
+    id: 'report-107',
     projectId: 'proj-1',
     supervisorId: 'sup-3',
     supervisorName: 'Ahmad Mandor',
@@ -210,7 +209,7 @@ let mockDailyLogs: DailyLog[] = [
     media: [
       {
         id: 'med-11',
-        dailyLogId: 'log-107',
+        dailyWorkReportId: 'report-107',
         fileUrl:
           'https://images.unsplash.com/photo-1503387762-592deb58ef4e?auto=format&fit=crop&w=800&q=80',
         fileName: 'pagar_pengaman.jpg',
@@ -222,57 +221,69 @@ let mockDailyLogs: DailyLog[] = [
   },
 ];
 
-export const dailyLogService = {
-  async getDailyLogs(projectId: string, filter?: DailyLogFilter): Promise<DailyLog[]> {
+export const dailyWorkReportService = {
+  // GET /daily-work-reports
+  async getDailyWorkReports(
+    projectId: string,
+    filter?: DailyWorkReportFilter
+  ): Promise<DailyWorkReport[]> {
     await new Promise((res) => setTimeout(res, 200));
 
-    let logs = mockDailyLogs.filter((log) => log.projectId === projectId);
+    let reports = mockDailyWorkReports.filter((r) => r.projectId === projectId);
 
-    // Fallback: If no logs match the specific projectId in mock dataset, return all mock logs for review testing
-    if (logs.length === 0) {
-      logs = mockDailyLogs;
+    // Fallback: If no reports match the specific projectId in mock dataset, return all mock reports for review testing
+    if (reports.length === 0) {
+      reports = mockDailyWorkReports;
     }
 
     if (filter) {
       if (filter.status && filter.status !== 'ALL') {
-        logs = logs.filter((l) => l.status === filter.status);
+        reports = reports.filter((r) => r.status === filter.status);
       }
       if (filter.weather && filter.weather !== 'ALL') {
-        logs = logs.filter((l) => l.weather === filter.weather);
+        reports = reports.filter((r) => r.weather === filter.weather);
       }
       if (filter.searchQuery) {
         const query = filter.searchQuery.toLowerCase();
-        logs = logs.filter(
-          (l) =>
-            l.notes.toLowerCase().includes(query) ||
-            l.supervisorName.toLowerCase().includes(query) ||
-            l.logDate.includes(query)
+        reports = reports.filter(
+          (r) =>
+            r.notes.toLowerCase().includes(query) ||
+            r.supervisorName.toLowerCase().includes(query) ||
+            r.logDate.includes(query)
         );
       }
     }
 
-    return [...logs].sort(
+    return [...reports].sort(
       (a, b) => new Date(b.logDate).getTime() - new Date(a.logDate).getTime()
     );
   },
 
-  async getDailyLogById(projectId: string, logId: string): Promise<DailyLog> {
+  // GET /daily-work-reports/:id
+  async getDailyWorkReportById(
+    projectId: string,
+    reportId: string
+  ): Promise<DailyWorkReport> {
     await new Promise((res) => setTimeout(res, 150));
-    const log = mockDailyLogs.find(
-      (l) => l.id === logId && (l.projectId === projectId || projectId === 'proj-1')
+    const report = mockDailyWorkReports.find(
+      (r) => r.id === reportId && (r.projectId === projectId || projectId === 'proj-1')
     );
-    if (!log) {
+    if (!report) {
       throw new Error('Laporan harian tidak ditemukan');
     }
-    return log;
+    return report;
   },
 
-  async createDailyLog(projectId: string, input: CreateDailyLogInput): Promise<DailyLog> {
+  // POST /daily-work-reports
+  async createDailyWorkReport(
+    projectId: string,
+    input: CreateDailyWorkReportInput
+  ): Promise<DailyWorkReport> {
     await new Promise((res) => setTimeout(res, 400));
 
-    const newLogId = `log-${Date.now()}`;
-    const newLog: DailyLog = {
-      id: newLogId,
+    const newReportId = `report-${Date.now()}`;
+    const newReport: DailyWorkReport = {
+      id: newReportId,
       projectId,
       supervisorId: 'sup-current',
       supervisorName: 'Pengawas Aktif',
@@ -283,7 +294,7 @@ export const dailyLogService = {
       status: 'SUBMITTED',
       media: input.mediaUrls.map((url, idx) => ({
         id: `med-${Date.now()}-${idx}`,
-        dailyLogId: newLogId,
+        dailyWorkReportId: newReportId,
         fileUrl: url,
         fileName: `foto_progres_${idx + 1}.jpg`,
         fileSize: 2000000,
@@ -292,36 +303,41 @@ export const dailyLogService = {
       createdAt: new Date().toISOString(),
     };
 
-    mockDailyLogs.unshift(newLog);
-    return newLog;
+    mockDailyWorkReports.unshift(newReport);
+    return newReport;
   },
 
-  async verifyDailyLog(projectId: string, logId: string): Promise<DailyLog> {
+  // PATCH /daily-work-reports/:id/verify
+  async verifyDailyWorkReport(
+    projectId: string,
+    reportId: string
+  ): Promise<DailyWorkReport> {
     await new Promise((res) => setTimeout(res, 250));
-    const log = mockDailyLogs.find((l) => l.id === logId);
-    if (!log) {
+    const report = mockDailyWorkReports.find((r) => r.id === reportId);
+    if (!report) {
       throw new Error('Laporan harian tidak ditemukan');
     }
-    log.status = 'VERIFIED_PM';
-    log.revisionNotes = undefined;
-    log.updatedAt = new Date().toISOString();
-    return { ...log };
+    report.status = 'VERIFIED_PM';
+    report.revisionNotes = undefined;
+    report.updatedAt = new Date().toISOString();
+    return { ...report };
   },
 
+  // PATCH /daily-work-reports/:id/request-revision
   async requestRevision(
     projectId: string,
-    logId: string,
+    reportId: string,
     revisionNotes: string
-  ): Promise<DailyLog> {
+  ): Promise<DailyWorkReport> {
     await new Promise((res) => setTimeout(res, 250));
-    const log = mockDailyLogs.find((l) => l.id === logId);
-    if (!log) {
+    const report = mockDailyWorkReports.find((r) => r.id === reportId);
+    if (!report) {
       throw new Error('Laporan harian tidak ditemukan');
     }
-    log.status = 'REVISION_REQUESTED';
-    log.revisionNotes = revisionNotes;
-    log.updatedAt = new Date().toISOString();
-    return { ...log };
+    report.status = 'REVISION_REQUESTED';
+    report.revisionNotes = revisionNotes;
+    report.updatedAt = new Date().toISOString();
+    return { ...report };
   },
 
   async uploadPhoto(file: File): Promise<string> {

@@ -1,4 +1,4 @@
-export type DailyLogStatus =
+export type DailyWorkReportStatus =
   | 'DRAFT_LOG'
   | 'SUBMITTED'
   | 'VERIFIED_PM'
@@ -7,16 +7,16 @@ export type DailyLogStatus =
 
 export type WeatherCondition = 'CERAH' | 'BERAWAN' | 'GERIMIS' | 'HUJAN';
 
-export interface DailyLogMedia {
+export interface DailyWorkReportMedia {
   id: string;
-  dailyLogId: string;
+  dailyWorkReportId: string;
   fileUrl: string;
   fileName?: string;
   fileSize?: number;
   createdAt: string;
 }
 
-export interface DailyLog {
+export interface DailyWorkReport {
   id: string;
   projectId: string;
   supervisorId: string;
@@ -26,14 +26,14 @@ export interface DailyLog {
   weather: WeatherCondition;
   laborCount: number;
   notes: string;
-  status: DailyLogStatus;
+  status: DailyWorkReportStatus;
   revisionNotes?: string;
-  media: DailyLogMedia[];
+  media: DailyWorkReportMedia[];
   createdAt: string;
   updatedAt?: string;
 }
 
-export interface CreateDailyLogInput {
+export interface CreateDailyWorkReportInput {
   logDate: string;
   weather: WeatherCondition;
   laborCount: number;
@@ -41,8 +41,8 @@ export interface CreateDailyLogInput {
   mediaUrls: string[];
 }
 
-export interface DailyLogFilter {
-  status?: DailyLogStatus | 'ALL';
+export interface DailyWorkReportFilter {
+  status?: DailyWorkReportStatus | 'ALL';
   weather?: WeatherCondition | 'ALL';
   searchQuery?: string;
   startDate?: string;

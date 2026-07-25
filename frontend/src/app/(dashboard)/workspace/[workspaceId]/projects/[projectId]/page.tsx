@@ -89,7 +89,7 @@ export default function ProjectDashboardOverviewPage({
             <div>
               <p className="text-xs font-semibold text-muted-foreground uppercase">Laporan Harian</p>
               <p className="text-2xl font-extrabold text-amber-600 dark:text-amber-400 mt-0.5">
-                {project.dailyLogCount || 0}
+                {project.dailyWorkReportCount || 0}
               </p>
             </div>
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-500/10 text-amber-500">
@@ -160,7 +160,7 @@ export default function ProjectDashboardOverviewPage({
               Periksa laporan harian dari lapangan, jumlah pekerja, foto progres, dan verifikasi PM.
             </p>
             <Button size="sm" variant="outline" className="w-full gap-1" asChild>
-              <Link href={`/workspace/${workspaceId}/projects/${projectId}/daily-logs`}>
+              <Link href={`/workspace/${workspaceId}/projects/${projectId}/daily-work-reports`}>
                 Buka Laporan Harian <ArrowRight className="h-3.5 w-3.5" />
               </Link>
             </Button>

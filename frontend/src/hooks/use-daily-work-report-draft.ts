@@ -1,9 +1,9 @@
 'use client';
 
-import { WeatherCondition } from '@/types/domain/daily-log';
+import { WeatherCondition } from '@/types/domain/daily-work-report';
 import { useCallback, useEffect, useState } from 'react';
 
-export interface DailyLogDraftData {
+export interface DailyWorkReportDraftData {
   logDate: string;
   weather: WeatherCondition;
   laborCount: number;
@@ -11,25 +11,25 @@ export interface DailyLogDraftData {
   photoUrls: string[];
 }
 
-export function useDailyLogDraft(projectId: string, initialDate: string) {
+export function useDailyWorkReportDraft(projectId: string, initialDate: string) {
   const [draftKey, setDraftKey] = useState<string>(
-    `draft:dailylog:${projectId}:${initialDate}`
+    `draft:daily-work-report:${projectId}:${initialDate}`
   );
   const [isDraftLoaded, setIsDraftLoaded] = useState(false);
   const [hasDraft, setHasDraft] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
 
   useEffect(() => {
-    setDraftKey(`draft:dailylog:${projectId}:${initialDate}`);
+    setDraftKey(`draft:daily-work-report:${projectId}:${initialDate}`);
   }, [projectId, initialDate]);
 
   // Load existing draft from localStorage
-  const loadDraft = useCallback((): DailyLogDraftData | null => {
+  const loadDraft = useCallback((): DailyWorkReportDraftData | null => {
     if (typeof window === 'undefined') return null;
     try {
       const saved = localStorage.getItem(draftKey);
       if (saved) {
-        const parsed = JSON.parse(saved) as DailyLogDraftData;
+        const parsed = JSON.parse(saved) as DailyWorkReportDraftData;
         setHasDraft(true);
         setIsDraftLoaded(true);
         return parsed;
@@ -43,7 +43,7 @@ export function useDailyLogDraft(projectId: string, initialDate: string) {
 
   // Save current form state as draft
   const saveDraft = useCallback(
-    (data: Partial<DailyLogDraftData>) => {
+    (data: Partial<DailyWorkReportDraftData>) => {
       if (typeof window === 'undefined') return;
       try {
         const currentDraft = localStorage.getItem(draftKey);

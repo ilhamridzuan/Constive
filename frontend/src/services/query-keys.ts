@@ -18,10 +18,10 @@ export const queryKeys = {
     tasks: (workspaceId: string, projectId: string) =>
       ['workspace', workspaceId, 'project', projectId, 'gantt', 'tasks'] as const,
   },
-  dailyLogs: {
+  dailyWorkReports: {
     list: (workspaceId: string, projectId: string) =>
-      ['workspace', workspaceId, 'project', projectId, 'dailyLogs'] as const,
-    detail: (workspaceId: string, projectId: string, logId: string) =>
-      ['workspace', workspaceId, 'project', projectId, 'dailyLogs', logId] as const,
+      ['workspace', workspaceId, 'project', projectId, 'dailyWorkReports'] as const,
+    detail: (workspaceId: string, projectId: string, reportId: string) =>
+      ['workspace', workspaceId, 'project', projectId, 'dailyWorkReports', reportId] as const,
   },
 };

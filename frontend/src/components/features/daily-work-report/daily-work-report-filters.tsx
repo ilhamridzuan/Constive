@@ -2,16 +2,16 @@
 
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { DailyLogFilter, DailyLogStatus, WeatherCondition } from '@/types/domain/daily-log';
+import { DailyWorkReportFilter, DailyWorkReportStatus, WeatherCondition } from '@/types/domain/daily-work-report';
 import { Filter, Search } from 'lucide-react';
 import React from 'react';
 
-interface DailyLogFiltersProps {
-  filter: DailyLogFilter;
-  onChange: (filter: DailyLogFilter) => void;
+interface DailyWorkReportFiltersProps {
+  filter: DailyWorkReportFilter;
+  onChange: (filter: DailyWorkReportFilter) => void;
 }
 
-export function DailyLogFilters({ filter, onChange }: DailyLogFiltersProps) {
+export function DailyWorkReportFilters({ filter, onChange }: DailyWorkReportFiltersProps) {
   return (
     <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-card p-3 rounded-lg border border-border shadow-xs">
       {/* Search Input */}
@@ -32,7 +32,7 @@ export function DailyLogFilters({ filter, onChange }: DailyLogFiltersProps) {
         <Select
           value={filter.status || 'ALL'}
           onValueChange={(val) =>
-            onChange({ ...filter, status: val as DailyLogStatus | 'ALL' })
+            onChange({ ...filter, status: val as DailyWorkReportStatus | 'ALL' })
           }
         >
           <SelectTrigger className="w-[140px] h-9 text-xs">
