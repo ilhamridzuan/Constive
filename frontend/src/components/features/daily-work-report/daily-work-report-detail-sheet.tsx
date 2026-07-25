@@ -11,23 +11,33 @@ import {
   Users,
   X,
 } from 'lucide-react';
+import { useParams } from 'next/navigation';
 import React, { useState } from 'react';
+import { CommentSection } from './comment-section';
 
 interface DailyWorkReportDetailSheetProps {
+  workspaceId?: string;
+  projectId?: string;
   report: DailyWorkReport | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
 export function DailyWorkReportDetailSheet({
+  workspaceId,
+  projectId,
   report,
   open,
   onOpenChange,
 }: DailyWorkReportDetailSheetProps) {
   // Lightbox State
   const [activePhotoIndex, setActivePhotoIndex] = useState<number | null>(null);
+  const params = useParams();
 
   if (!report) return null;
+
+  const effectiveWorkspaceId = workspaceId || (params?.workspaceId as string) || 'ws-1';
+  const effectiveProjectId = projectId || (params?.projectId as string) || report.projectId || 'proj-1';
 
   const getWeatherLabel = (weather: string) => {
     switch (weather) {
@@ -128,6 +138,13 @@ export function DailyWorkReportDetailSheet({
               <User className="h-3.5 w-3.5 text-primary" /> Pelapor: <strong className="text-foreground">{report.supervisorName}</strong>
             </span>
           </div>
+
+          {/* Comment Section (Threaded Discussion) */}
+          <CommentSection
+            workspaceId={effectiveWorkspaceId}
+            projectId={effectiveProjectId}
+            reportId={report.id}
+          />
         </div>
       </Sheet>
 

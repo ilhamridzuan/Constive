@@ -162,6 +162,8 @@ export default function ProjectDailyWorkReportsPage({
 
       {/* Detail Sheet */}
       <DailyWorkReportDetailSheet
+        workspaceId={workspaceId}
+        projectId={projectId}
         report={selectedReport}
         open={isSheetOpen}
         onOpenChange={setIsSheetOpen}
