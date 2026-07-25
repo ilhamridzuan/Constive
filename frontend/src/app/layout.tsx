@@ -1,3 +1,5 @@
+import { QueryProvider } from '@/components/providers/query-provider';
+import { Toaster } from '@/components/ui/toast';
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
@@ -17,7 +19,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-        {children}
+        <QueryProvider>
+          {children}
+          <Toaster />
+        </QueryProvider>
       </body>
     </html>
   );

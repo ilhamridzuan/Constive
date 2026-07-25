@@ -1,9 +1,18 @@
 'use client';
 
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Activity, Plus, RefreshCw, ZoomIn, ZoomOut } from 'lucide-react';
-import { use } from 'react';
+import { GanttToolbar } from '@/components/features/gantt/gantt-toolbar';
+import { GanttWrapper } from '@/components/features/gantt/gantt-wrapper';
+import { PresenceAvatars } from '@/components/features/gantt/presence-avatars';
+import { TaskEditorDialog } from '@/components/features/gantt/task-editor-dialog';
+import {
+  useCreateGanttTask,
+  useDeleteGanttTask,
+  useGanttTasks,
+  useUpdateGanttTaskOptimistic,
+} from '@/hooks/use-optimistic-gantt';
+import { CreateTaskDto, TaskItem, TaskStatus, UpdateTaskGanttDto } from '@/types/domain/task';
+import { ViewMode } from 'gantt-task-react';
+import { use, useMemo, useState } from 'react';
 
 export default function ProjectGanttPage({
   params,
@@ -12,49 +21,142 @@ export default function ProjectGanttPage({
 }) {
   const { workspaceId, projectId } = use(params);
 
+  // Data Query & Mutations
+  const { data: rawTasks = [], isLoading, refetch } = useGanttTasks(workspaceId, projectId);
+  const updateTaskMutation = useUpdateGanttTaskOptimistic(workspaceId, projectId);
+  const createTaskMutation = useCreateGanttTask(workspaceId, projectId);
+  const deleteTaskMutation = useDeleteGanttTask(workspaceId, projectId);
+
+  // Page Controls State
+  const [viewMode, setViewMode] = useState<ViewMode>(ViewMode.Day);
+  const [statusFilter, setStatusFilter] = useState<TaskStatus | 'ALL'>('ALL');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isFullScreen, setIsFullScreen] = useState(false);
+
+  // Dialog State
+  const [editorOpen, setEditorOpen] = useState(false);
+  const [selectedTask, setSelectedTask] = useState<TaskItem | null>(null);
+
+  // Filter Tasks by Search Query & Status
+  const filteredTasks = useMemo(() => {
+    return rawTasks.filter((task) => {
+      const matchesSearch =
+        !searchQuery ||
+        task.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        task.description?.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesStatus = statusFilter === 'ALL' || task.status === statusFilter;
+      return matchesSearch && matchesStatus;
+    });
+  }, [rawTasks, searchQuery, statusFilter]);
+
+  // Handlers
+  const handleAddTask = () => {
+    setSelectedTask(null);
+    setEditorOpen(true);
+  };
+
+  const handleTaskDoubleClick = (task: TaskItem) => {
+    setSelectedTask(task);
+    setEditorOpen(true);
+  };
+
+  const handleDateChange = (task: TaskItem, start: Date, end: Date) => {
+    const formattedStart = start.toISOString().split('T')[0];
+    const formattedEnd = end.toISOString().split('T')[0];
+
+    updateTaskMutation.mutate({
+      taskId: task.id,
+      dto: {
+        startDate: formattedStart,
+        endDate: formattedEnd,
+      },
+    });
+  };
+
+  const handleProgressChange = (task: TaskItem, progressPercent: number) => {
+    const status: TaskStatus =
+      progressPercent === 100 ? 'COMPLETED' : progressPercent > 0 ? 'IN_PROGRESS' : 'TODO';
+
+    updateTaskMutation.mutate({
+      taskId: task.id,
+      dto: {
+        progressPercent: Math.round(progressPercent),
+        status,
+      },
+    });
+  };
+
+  const handleSaveTask = async (
+    dto: UpdateTaskGanttDto | CreateTaskDto,
+    taskId?: string
+  ): Promise<void> => {
+    if (taskId) {
+      await updateTaskMutation.mutateAsync({
+        taskId,
+        dto: dto as UpdateTaskGanttDto,
+      });
+    } else {
+      await createTaskMutation.mutateAsync(dto as CreateTaskDto);
+    }
+  };
+
+  const handleDeleteTask = async (taskId: string): Promise<void> => {
+    await deleteTaskMutation.mutateAsync(taskId);
+  };
+
+  const toggleFullScreen = () => {
+    setIsFullScreen(!isFullScreen);
+  };
+
   return (
-    <div className="space-y-4">
-      {/* Toolbar */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-card p-3 rounded-lg border border-border">
-        <div className="flex items-center gap-2">
-          <h2 className="text-sm font-bold text-foreground flex items-center gap-2">
-            <Activity className="h-4 w-4 text-purple-500" /> Interactive Gantt Chart Canvas
-          </h2>
+    <div
+      className={`space-y-4 ${
+        isFullScreen
+          ? 'fixed inset-0 z-50 bg-background p-6 overflow-y-auto'
+          : 'relative'
+      }`}
+    >
+      {/* Interactive Toolbar */}
+      <GanttToolbar
+        viewMode={viewMode}
+        onViewModeChange={setViewMode}
+        statusFilter={statusFilter}
+        onStatusFilterChange={setStatusFilter}
+        searchQuery={searchQuery}
+        onSearchQueryChange={setSearchQuery}
+        onAddTask={handleAddTask}
+        onRefresh={() => refetch()}
+        isFullScreen={isFullScreen}
+        onToggleFullScreen={toggleFullScreen}
+      />
+
+      {/* Main Gantt Canvas Wrapper */}
+      {isLoading ? (
+        <div className="min-h-[400px] flex items-center justify-center p-8 bg-card border border-border rounded-lg animate-pulse text-muted-foreground text-xs">
+          Memuat data tugas WBS proyek...
         </div>
+      ) : (
+        <GanttWrapper
+          tasks={filteredTasks}
+          viewMode={viewMode}
+          onDateChange={handleDateChange}
+          onProgressChange={handleProgressChange}
+          onTaskDoubleClick={handleTaskDoubleClick}
+        />
+      )}
 
-        <div className="flex items-center gap-2">
-          <div className="flex rounded-md border border-border bg-muted/40 p-1 text-xs">
-            <button className="px-2.5 py-1 font-medium bg-card text-foreground rounded shadow-xs">Hari</button>
-            <button className="px-2.5 py-1 font-medium text-muted-foreground hover:text-foreground">Minggu</button>
-            <button className="px-2.5 py-1 font-medium text-muted-foreground hover:text-foreground">Bulan</button>
-          </div>
+      {/* Presence Avatars & Realtime Presence Bar */}
+      <PresenceAvatars />
 
-          <Button size="sm" className="gap-1 h-8 text-xs">
-            <Plus className="h-3.5 w-3.5" /> Tambah Tugas
-          </Button>
-        </div>
-      </div>
-
-      {/* Gantt View Placeholder Canvas */}
-      <Card className="border-border bg-card">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-xs font-semibold text-muted-foreground uppercase">
-            Jadwal WBS Proyek #{projectId}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="min-h-[400px] flex flex-col items-center justify-center p-8 text-center border-t border-border/50">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-purple-500/10 text-purple-500 mb-3">
-            <Activity className="h-6 w-6" />
-          </div>
-          <h3 className="text-sm font-bold text-foreground">Canvas Gantt Chart Terintegrasi</h3>
-          <p className="text-xs text-muted-foreground max-w-md mt-1 mb-4">
-            Modul Gantt Chart siap digunakan dengan fitur Drag & Drop, dependensi antar-tugas WBS, dan sinkronisasi real-time.
-          </p>
-          <Button variant="outline" size="sm" className="gap-1 text-xs">
-            <RefreshCw className="h-3.5 w-3.5" /> Muat Ulang Data Task
-          </Button>
-        </CardContent>
-      </Card>
+      {/* Task Editor Dialog / Sheet */}
+      <TaskEditorDialog
+        open={editorOpen}
+        onOpenChange={setEditorOpen}
+        task={selectedTask}
+        allTasks={rawTasks}
+        onSave={handleSaveTask}
+        onDelete={handleDeleteTask}
+      />
     </div>
   );
 }
