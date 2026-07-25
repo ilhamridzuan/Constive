@@ -2,7 +2,7 @@
 
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { DailyWorkReportFilter, DailyWorkReportStatus, WeatherCondition } from '@/types/domain/daily-work-report';
+import { DailyWorkReportFilter, WeatherCondition } from '@/types/domain/daily-work-report';
 import { Filter, Search } from 'lucide-react';
 import React from 'react';
 
@@ -27,25 +27,6 @@ export function DailyWorkReportFilters({ filter, onChange }: DailyWorkReportFilt
 
       <div className="flex items-center gap-2">
         <Filter className="h-4 w-4 text-muted-foreground hidden sm:block" />
-
-        {/* Status Dropdown */}
-        <Select
-          value={filter.status || 'ALL'}
-          onValueChange={(val) =>
-            onChange({ ...filter, status: val as DailyWorkReportStatus | 'ALL' })
-          }
-        >
-          <SelectTrigger className="w-[140px] h-9 text-xs">
-            <SelectValue placeholder="Status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="ALL">Semua Status</SelectItem>
-            <SelectItem value="SUBMITTED">Menunggu PM</SelectItem>
-            <SelectItem value="VERIFIED_PM">Verifikasi PM</SelectItem>
-            <SelectItem value="REVISION_REQUESTED">Minta Revisi</SelectItem>
-            <SelectItem value="DRAFT_LOG">Draf</SelectItem>
-          </SelectContent>
-        </Select>
 
         {/* Weather Dropdown */}
         <Select

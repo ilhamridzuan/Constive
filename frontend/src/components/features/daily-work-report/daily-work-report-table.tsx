@@ -1,46 +1,19 @@
 'use client';
 
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-  DailyWorkReport,
-  DailyWorkReportStatus,
-} from '@/types/domain/daily-work-report';
-import { Camera, CheckCircle2, Eye, RotateCcw, User } from 'lucide-react';
+import { DailyWorkReport } from '@/types/domain/daily-work-report';
+import { Camera, Eye } from 'lucide-react';
 import React from 'react';
 
 interface DailyWorkReportTableProps {
   reports: DailyWorkReport[];
   onSelectReport: (report: DailyWorkReport) => void;
-  onVerifyReport?: (reportId: string) => void;
-  onRequestRevision?: (report: DailyWorkReport) => void;
-  isPM?: boolean;
 }
 
 export function DailyWorkReportTable({
   reports,
   onSelectReport,
-  onVerifyReport,
-  onRequestRevision,
-  isPM = true,
 }: DailyWorkReportTableProps) {
-  const getStatusBadge = (status: DailyWorkReportStatus) => {
-    switch (status) {
-      case 'VERIFIED_PM':
-        return <Badge variant="success">Verifikasi PM</Badge>;
-      case 'SUBMITTED':
-        return <Badge variant="default">Menunggu PM</Badge>;
-      case 'REVISION_REQUESTED':
-        return <Badge variant="warning">Minta Revisi</Badge>;
-      case 'DRAFT_LOG':
-        return <Badge variant="outline">Draf</Badge>;
-      case 'ARCHIVED':
-        return <Badge variant="secondary">Arsip</Badge>;
-      default:
-        return <Badge variant="outline">{status}</Badge>;
-    }
-  };
-
   const getWeatherLabel = (weather: string) => {
     switch (weather) {
       case 'CERAH':
@@ -76,7 +49,6 @@ export function DailyWorkReportTable({
             <th className="px-4 py-3 font-semibold">Pengawas</th>
             <th className="px-4 py-3 font-semibold">Cuaca & Pekerja</th>
             <th className="px-4 py-3 font-semibold">Catatan Lapangan</th>
-            <th className="px-4 py-3 font-semibold">Status</th>
             <th className="px-4 py-3 font-semibold">Foto</th>
             <th className="px-4 py-3 font-semibold text-right">Aksi</th>
           </tr>
@@ -102,7 +74,6 @@ export function DailyWorkReportTable({
               <td className="px-4 py-2 max-w-[240px]">
                 <p className="truncate text-muted-foreground">{report.notes}</p>
               </td>
-              <td className="px-4 py-2">{getStatusBadge(report.status)}</td>
               <td className="px-4 py-2">
                 <span className="inline-flex items-center gap-1 font-medium text-foreground bg-muted px-2 py-1 rounded">
                   <Camera className="h-3 w-3 text-primary" /> {report.media.length}
@@ -119,28 +90,6 @@ export function DailyWorkReportTable({
                   >
                     <Eye className="h-3.5 w-3.5 mr-1" /> Detail
                   </Button>
-
-                  {isPM && report.status === 'SUBMITTED' && (
-                    <>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="h-8 px-2 text-xs text-amber-600 border-amber-500/40 hover:bg-amber-500/10"
-                        onClick={() => onRequestRevision && onRequestRevision(report)}
-                        title="Minta Revisi"
-                      >
-                        <RotateCcw className="h-3.5 w-3.5 mr-1" /> Revisi
-                      </Button>
-                      <Button
-                        size="sm"
-                        className="h-8 px-2 text-xs bg-emerald-600 hover:bg-emerald-700 text-white"
-                        onClick={() => onVerifyReport && onVerifyReport(report.id)}
-                        title="Verifikasi Laporan"
-                      >
-                        <CheckCircle2 className="h-3.5 w-3.5 mr-1" /> Verifikasi
-                      </Button>
-                    </>
-                  )}
                 </div>
               </td>
             </tr>
