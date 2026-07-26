@@ -1,5 +1,6 @@
 'use client';
 
+import { ProjectTopTabs } from '@/components/features/project/project-top-tabs';
 import { Badge } from '@/components/ui/badge';
 import { projectService } from '@/services/project.service';
 import { Project } from '@/types/domain/project';
@@ -31,7 +32,7 @@ export default function ProjectLayout({
   return (
     <div className="max-w-6xl mx-auto space-y-5">
       {/* Top Breadcrumb & Context Header */}
-      <div className="space-y-2 border-b border-border pb-4">
+      <div className="space-y-3">
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
           <Link
             href={`/workspace/${workspaceId}/projects`}
@@ -73,6 +74,9 @@ export default function ProjectLayout({
             <span>ID Proyek: <span className="font-mono text-foreground">{projectId}</span></span>
           </div>
         </div>
+
+        {/* GitHub-style Horizontal Top Navigation Tabs */}
+        <ProjectTopTabs workspaceId={workspaceId} projectId={projectId} />
       </div>
 
       {/* Main Project Content View */}
@@ -80,3 +84,4 @@ export default function ProjectLayout({
     </div>
   );
 }
+
