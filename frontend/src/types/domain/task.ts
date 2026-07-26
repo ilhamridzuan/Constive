@@ -15,6 +15,8 @@ export interface TaskItem {
   progressPercent: number; // 0 to 100
   parentId?: string | null;
   predecessorId?: string | null;
+  level: number; // 0 = root/parent utama, 1 = child, dst
+  wbsCode?: string; // contoh: "1.0", "1.1", "1.1.1"
   displayOrder?: number;
   createdById?: string;
   createdAt?: string;
@@ -31,6 +33,8 @@ export interface UpdateTaskGanttDto {
   progressPercent?: number;
   parentId?: string | null;
   predecessorId?: string | null;
+  level?: number;
+  wbsCode?: string;
 }
 
 export interface CreateTaskDto {
@@ -43,4 +47,6 @@ export interface CreateTaskDto {
   progressPercent?: number;
   parentId?: string | null;
   predecessorId?: string | null;
+  level?: number;
+  wbsCode?: string;
 }

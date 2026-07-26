@@ -5,6 +5,8 @@ import { TaskStatus } from '@/types/domain/task';
 import { ViewMode } from 'gantt-task-react';
 import {
   Activity,
+  ChevronsDown,
+  ChevronsUp,
   Filter,
   Maximize2,
   Minimize2,
@@ -21,10 +23,11 @@ interface GanttToolbarProps {
   onStatusFilterChange: (status: TaskStatus | 'ALL') => void;
   searchQuery: string;
   onSearchQueryChange: (query: string) => void;
-  onAddTask: () => void;
   onRefresh: () => void;
   isFullScreen?: boolean;
   onToggleFullScreen?: () => void;
+  isAllExpanded?: boolean;
+  onToggleExpandAll?: () => void;
 }
 
 export function GanttToolbar({
@@ -34,10 +37,11 @@ export function GanttToolbar({
   onStatusFilterChange,
   searchQuery,
   onSearchQueryChange,
-  onAddTask,
   onRefresh,
   isFullScreen,
   onToggleFullScreen,
+  isAllExpanded = true,
+  onToggleExpandAll,
 }: GanttToolbarProps) {
   const [showSearch, setShowSearch] = useState(false);
 
@@ -168,10 +172,28 @@ export function GanttToolbar({
           </Button>
         )}
 
-        {/* Create Task Action */}
-        <Button size="sm" onClick={onAddTask} className="h-8 gap-1 text-xs bg-primary text-primary-foreground hover:bg-primary-hover font-semibold">
-          <Plus className="h-3.5 w-3.5" /> Tambah Tugas
-        </Button>
+        {/* Expand All / Collapse All Action */}
+        {onToggleExpandAll && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onToggleExpandAll}
+            className="h-8 gap-1.5 text-xs font-medium border-border hover:bg-accent"
+            title={isAllExpanded ? 'Sembunyikan Seluruh Hirarki' : 'Buka Seluruh Hirarki'}
+          >
+            {isAllExpanded ? (
+              <>
+                <ChevronsUp className="h-3.5 w-3.5 text-muted-foreground" />
+                <span>Collapse All</span>
+              </>
+            ) : (
+              <>
+                <ChevronsDown className="h-3.5 w-3.5 text-muted-foreground" />
+                <span>Expand All</span>
+              </>
+            )}
+          </Button>
+        )}
       </div>
     </div>
   );
