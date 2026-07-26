@@ -1,6 +1,6 @@
 import { CreateTaskDto, TaskItem, UpdateTaskGanttDto } from '@/types/domain/task';
 
-// Initial construction project WBS sample data
+// Initial construction project WBS sample data with multi-level (level 0, 1, 2)
 const initialMockTasks: Record<string, TaskItem[]> = {
   default: [
     {
@@ -16,6 +16,8 @@ const initialMockTasks: Record<string, TaskItem[]> = {
       progressPercent: 100,
       parentId: null,
       predecessorId: null,
+      level: 0,
+      wbsCode: '1.0',
       displayOrder: 1,
     },
     {
@@ -31,6 +33,8 @@ const initialMockTasks: Record<string, TaskItem[]> = {
       progressPercent: 75,
       parentId: null,
       predecessorId: 'task-1',
+      level: 0,
+      wbsCode: '2.0',
       displayOrder: 2,
     },
     {
@@ -46,6 +50,8 @@ const initialMockTasks: Record<string, TaskItem[]> = {
       progressPercent: 100,
       parentId: 'task-2',
       predecessorId: 'task-1',
+      level: 1,
+      wbsCode: '2.1',
       displayOrder: 3,
     },
     {
@@ -61,7 +67,43 @@ const initialMockTasks: Record<string, TaskItem[]> = {
       progressPercent: 50,
       parentId: 'task-2',
       predecessorId: 'task-3',
+      level: 1,
+      wbsCode: '2.2',
       displayOrder: 4,
+    },
+    {
+      id: 'task-4-1',
+      workspaceId: 'ws-1',
+      projectId: 'proj-1',
+      name: 'Pembesian & Bekisting Pile Cap',
+      description: 'Perakitan besi beton dan bekisting kayu pile cap.',
+      status: 'COMPLETED',
+      priority: 'HIGH',
+      startDate: '2026-07-15',
+      endDate: '2026-07-18',
+      progressPercent: 100,
+      parentId: 'task-4',
+      predecessorId: null,
+      level: 2,
+      wbsCode: '2.2.1',
+      displayOrder: 5,
+    },
+    {
+      id: 'task-4-2',
+      workspaceId: 'ws-1',
+      projectId: 'proj-1',
+      name: 'Pengecoran Beton Ready-Mix Sloof',
+      description: 'Pengecoran mutu beton K-300 sloof dan curing.',
+      status: 'IN_PROGRESS',
+      priority: 'HIGH',
+      startDate: '2026-07-19',
+      endDate: '2026-07-22',
+      progressPercent: 25,
+      parentId: 'task-4',
+      predecessorId: 'task-4-1',
+      level: 2,
+      wbsCode: '2.2.2',
+      displayOrder: 6,
     },
     {
       id: 'task-5',
@@ -76,7 +118,9 @@ const initialMockTasks: Record<string, TaskItem[]> = {
       progressPercent: 0,
       parentId: null,
       predecessorId: 'task-2',
-      displayOrder: 5,
+      level: 0,
+      wbsCode: '3.0',
+      displayOrder: 7,
     },
     {
       id: 'task-6',
@@ -91,7 +135,9 @@ const initialMockTasks: Record<string, TaskItem[]> = {
       progressPercent: 0,
       parentId: 'task-5',
       predecessorId: 'task-4',
-      displayOrder: 6,
+      level: 1,
+      wbsCode: '3.1',
+      displayOrder: 8,
     },
     {
       id: 'task-7',
@@ -106,7 +152,9 @@ const initialMockTasks: Record<string, TaskItem[]> = {
       progressPercent: 0,
       parentId: 'task-5',
       predecessorId: 'task-6',
-      displayOrder: 7,
+      level: 1,
+      wbsCode: '3.2',
+      displayOrder: 9,
     },
   ],
 };
@@ -117,14 +165,82 @@ function getProjectKey(workspaceId: string, projectId: string): string {
   return `${workspaceId}:${projectId}`;
 }
 
+export function enrichTasksWithWbs(rawTasks: Partial<TaskItem>[]): TaskItem[] {
+  const rootTasks: Partial<TaskItem>[] = [];
+  const childrenMap = new Map<string, Partial<TaskItem>[]>();
+
+  rawTasks.forEach((t) => {
+    if (!t.parentId || !rawTasks.some((p) => p.id === t.parentId)) {
+      rootTasks.push(t);
+    } else {
+      const list = childrenMap.get(t.parentId) || [];
+      list.push(t);
+      childrenMap.set(t.parentId, list);
+    }
+  });
+
+  const result: TaskItem[] = [];
+
+  function processTask(
+    t: Partial<TaskItem>,
+    level: number,
+    wbsCode: string,
+    order: number
+  ) {
+    const children = childrenMap.get(t.id || '') || [];
+
+    const fullTask: TaskItem = {
+      id: t.id || `task-${Date.now()}`,
+      workspaceId: t.workspaceId || '',
+      projectId: t.projectId || '',
+      name: t.name || 'Tugas Baru',
+      description: t.description || '',
+      status: t.status || 'TODO',
+      priority: t.priority || 'MEDIUM',
+      startDate: t.startDate || new Date().toISOString().split('T')[0],
+      endDate: t.endDate || new Date().toISOString().split('T')[0],
+      progressPercent: t.progressPercent ?? 0,
+      parentId: t.parentId || null,
+      predecessorId: t.predecessorId || null,
+      level: t.level ?? level,
+      wbsCode: t.wbsCode || wbsCode,
+      displayOrder: order,
+      createdById: t.createdById,
+      createdAt: t.createdAt,
+      updatedAt: t.updatedAt,
+    };
+
+    result.push(fullTask);
+
+    children.forEach((child, childIdx) => {
+      let childWbs = child.wbsCode;
+      if (!childWbs) {
+        if (level === 0) {
+          childWbs = `${wbsCode.split('.')[0]}.${childIdx + 1}`;
+        } else {
+          childWbs = `${wbsCode}.${childIdx + 1}`;
+        }
+      }
+      processTask(child, level + 1, childWbs, order + childIdx + 1);
+    });
+  }
+
+  rootTasks.forEach((root, rootIdx) => {
+    const rootWbs = root.wbsCode || `${rootIdx + 1}.0`;
+    processTask(root, 0, rootWbs, (rootIdx + 1) * 10);
+  });
+
+  return result;
+}
+
 export const ganttService = {
   async getTasks(workspaceId: string, projectId: string): Promise<TaskItem[]> {
     const key = getProjectKey(workspaceId, projectId);
     if (!taskStore.has(key)) {
-      taskStore.set(
-        key,
+      const enriched = enrichTasksWithWbs(
         initialMockTasks.default.map((t) => ({ ...t, workspaceId, projectId }))
       );
+      taskStore.set(key, enriched);
     }
     return JSON.parse(JSON.stringify(taskStore.get(key) || []));
   },
@@ -145,12 +261,17 @@ export const ganttService = {
     const updatedTask: TaskItem = {
       ...tasks[index],
       ...dto,
+      level: dto.level ?? tasks[index].level,
+      wbsCode: dto.wbsCode ?? tasks[index].wbsCode,
       updatedAt: new Date().toISOString(),
     };
 
     tasks[index] = updatedTask;
-    taskStore.set(key, tasks);
-    return JSON.parse(JSON.stringify(updatedTask));
+    const enriched = enrichTasksWithWbs(tasks);
+    taskStore.set(key, enriched);
+
+    const resultTask = enriched.find((t) => t.id === taskId) || updatedTask;
+    return JSON.parse(JSON.stringify(resultTask));
   },
 
   async createTask(
@@ -160,7 +281,7 @@ export const ganttService = {
   ): Promise<TaskItem> {
     const key = getProjectKey(workspaceId, projectId);
     const tasks = taskStore.get(key) || [];
-    const newTask: TaskItem = {
+    const newTask: Partial<TaskItem> = {
       id: `task-${Date.now()}`,
       workspaceId,
       projectId,
@@ -173,21 +294,27 @@ export const ganttService = {
       progressPercent: dto.progressPercent || 0,
       parentId: dto.parentId || null,
       predecessorId: dto.predecessorId || null,
+      level: dto.level,
+      wbsCode: dto.wbsCode,
       displayOrder: tasks.length + 1,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
 
-    tasks.push(newTask);
-    taskStore.set(key, tasks);
-    return JSON.parse(JSON.stringify(newTask));
+    tasks.push(newTask as TaskItem);
+    const enriched = enrichTasksWithWbs(tasks);
+    taskStore.set(key, enriched);
+
+    const created = enriched.find((t) => t.id === newTask.id) || (newTask as TaskItem);
+    return JSON.parse(JSON.stringify(created));
   },
 
   async deleteTask(workspaceId: string, projectId: string, taskId: string): Promise<boolean> {
     const key = getProjectKey(workspaceId, projectId);
     const tasks = taskStore.get(key) || [];
     const filtered = tasks.filter((t) => t.id !== taskId);
-    taskStore.set(key, filtered);
+    const enriched = enrichTasksWithWbs(filtered);
+    taskStore.set(key, enriched);
     return true;
   },
 };

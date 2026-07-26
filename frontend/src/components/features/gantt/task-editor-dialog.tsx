@@ -13,12 +13,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { CreateTaskDto, TaskItem, TaskStatus, UpdateTaskGanttDto } from '@/types/domain/task';
 import { AlertCircle, Calendar, Trash2 } from 'lucide-react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
 interface TaskEditorDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   task?: TaskItem | null; // Null when creating new task
+  initialParentId?: string | null;
   allTasks: TaskItem[];
   onSave: (dto: UpdateTaskGanttDto | CreateTaskDto, taskId?: string) => Promise<void>;
   onDelete?: (taskId: string) => Promise<void>;
@@ -26,12 +27,14 @@ interface TaskEditorDialogProps {
 
 function TaskEditorForm({
   task,
+  initialParentId,
   allTasks,
   onSave,
   onDelete,
   onClose,
 }: {
   task?: TaskItem | null;
+  initialParentId?: string | null;
   allTasks: TaskItem[];
   onSave: (dto: UpdateTaskGanttDto | CreateTaskDto, taskId?: string) => Promise<void>;
   onDelete?: (taskId: string) => Promise<void>;
@@ -51,7 +54,7 @@ function TaskEditorForm({
       new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
   );
   const [progressPercent, setProgressPercent] = useState(task?.progressPercent || 0);
-  const [parentId, setParentId] = useState(task?.parentId || '');
+  const [parentId, setParentId] = useState(task?.parentId || initialParentId || '');
   const [predecessorId, setPredecessorId] = useState(task?.predecessorId || '');
 
   const [errors, setErrors] = useState<{
@@ -60,6 +63,62 @@ function TaskEditorForm({
     name?: string;
   }>({});
   const [submitting, setSubmitting] = useState(false);
+
+  // Helper to prevent selecting self or descendants as parent
+  const getDescendantIds = (taskId: string): Set<string> => {
+    const descendants = new Set<string>();
+    const addChildren = (id: string) => {
+      allTasks.filter((t) => t.parentId === id).forEach((child) => {
+        descendants.add(child.id);
+        addChildren(child.id);
+      });
+    };
+    addChildren(taskId);
+    return descendants;
+  };
+
+  const currentDescendants = task ? getDescendantIds(task.id) : new Set<string>();
+  const availableParentTasks = allTasks.filter(
+    (t) => (task ? t.id !== task.id && !currentDescendants.has(t.id) : true)
+  );
+  const availablePredecessorTasks = allTasks.filter((t) => (task ? t.id !== task.id : true));
+
+  // Reactive Level and WBS Code calculation based on parentId state
+  const parentTask = allTasks.find((t) => t.id === parentId);
+
+  const calculatedLevel = useMemo(() => {
+    if (!parentTask) return 0;
+    return (parentTask.level ?? 0) + 1;
+  }, [parentTask]);
+
+  const calculatedWbsCode = useMemo(() => {
+    // If editing and parentId hasn't changed, keep original wbsCode
+    if (task && task.parentId === (parentId || null) && task.wbsCode) {
+      return task.wbsCode;
+    }
+
+    if (!parentId) {
+      // Root task
+      const rootTasks = allTasks.filter(
+        (t) => (!t.parentId || !allTasks.some((p) => p.id === t.parentId)) && (task ? t.id !== task.id : true)
+      );
+      return `${rootTasks.length + 1}.0`;
+    }
+
+    // Child task under parentTask
+    const parentWbs = parentTask?.wbsCode || '1.0';
+    const existingSiblings = allTasks.filter(
+      (t) => t.parentId === parentId && (task ? t.id !== task.id : true)
+    );
+    const nextIndex = existingSiblings.length + 1;
+
+    if (parentTask?.level === 0) {
+      const parentMajor = parentWbs.split('.')[0];
+      return `${parentMajor}.${nextIndex}`;
+    } else {
+      return `${parentWbs}.${nextIndex}`;
+    }
+  }, [task, parentId, parentTask, allTasks]);
 
   // Check circular dependency helper
   const isCircularDependency = (targetPredecessorId: string): boolean => {
@@ -113,6 +172,8 @@ function TaskEditorForm({
             progressPercent,
             parentId: parentId || null,
             predecessorId: predecessorId || null,
+            level: calculatedLevel,
+            wbsCode: calculatedWbsCode,
           },
           task.id
         );
@@ -126,6 +187,8 @@ function TaskEditorForm({
           progressPercent,
           parentId: parentId || null,
           predecessorId: predecessorId || null,
+          level: calculatedLevel,
+          wbsCode: calculatedWbsCode,
         });
       }
       onClose();
@@ -149,11 +212,42 @@ function TaskEditorForm({
     }
   };
 
-  const availableParentTasks = allTasks.filter((t) => (task ? t.id !== task.id : true));
-  const availablePredecessorTasks = allTasks.filter((t) => (task ? t.id !== task.id : true));
-
   return (
     <form onSubmit={handleSubmit} className="space-y-4 text-xs py-2">
+      {/* Auto-calculated WBS Code & Level (Read-Only) */}
+      <div className="grid grid-cols-2 gap-3 p-2.5 rounded-lg bg-muted/40 border border-border/60">
+        <div className="space-y-1">
+          <Label htmlFor="wbs-code-display" className="text-xs font-semibold flex items-center gap-1 text-muted-foreground">
+            WBS Code
+            <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.2 rounded font-normal">Auto</span>
+          </Label>
+          <Input
+            id="wbs-code-display"
+            readOnly
+            value={calculatedWbsCode}
+            className="text-xs h-8 font-mono bg-background text-foreground font-bold cursor-not-allowed border-border/80"
+          />
+        </div>
+        <div className="space-y-1">
+          <Label htmlFor="level-display" className="text-xs font-semibold flex items-center gap-1 text-muted-foreground">
+            Kedalaman Level
+            <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.2 rounded font-normal">Terkalkulasi</span>
+          </Label>
+          <Input
+            id="level-display"
+            readOnly
+            value={`Level ${calculatedLevel} ${
+              calculatedLevel === 0
+                ? '(Root Utama)'
+                : calculatedLevel === 1
+                ? '(Child Level 1)'
+                : '(Sub-child Level 2)'
+            }`}
+            className="text-xs h-8 bg-background text-foreground font-semibold cursor-not-allowed border-border/80"
+          />
+        </div>
+      </div>
+
       {/* Task Name */}
       <div className="space-y-1">
         <Label htmlFor="task-name" className="text-xs font-semibold">
@@ -266,10 +360,10 @@ function TaskEditorForm({
             onChange={(e) => setParentId(e.target.value)}
             className="w-full h-9 px-2 text-xs rounded-md border border-input bg-card text-foreground focus:outline-none focus:ring-1 focus:ring-primary truncate"
           >
-            <option value="">Tanpa Induk (Tingkat Atas)</option>
+            <option value="">Tanpa Induk (Tingkat Atas / Level 0)</option>
             {availableParentTasks.map((t) => (
               <option key={t.id} value={t.id}>
-                {t.name}
+                {t.wbsCode ? `[${t.wbsCode}] ` : ''}{t.name}
               </option>
             ))}
           </select>
@@ -288,7 +382,7 @@ function TaskEditorForm({
             <option value="">Tanpa Prasyarat</option>
             {availablePredecessorTasks.map((t) => (
               <option key={t.id} value={t.id}>
-                {t.name}
+                {t.wbsCode ? `[${t.wbsCode}] ` : ''}{t.name}
               </option>
             ))}
           </select>
@@ -345,6 +439,7 @@ export function TaskEditorDialog({
   open,
   onOpenChange,
   task,
+  initialParentId,
   allTasks,
   onSave,
   onDelete,
@@ -361,15 +456,16 @@ export function TaskEditorDialog({
           </DialogTitle>
           <DialogDescription className="text-xs text-muted-foreground">
             {isEditing
-              ? 'Perbarui detail durasi, progress, dan dependensi tugas.'
+              ? 'Perbarui detail durasi, progress, dan dependensi tugas WBS.'
               : 'Tambahkan elemen Pekerjaan WBS ke dalam lini masa Gantt Chart.'}
           </DialogDescription>
         </DialogHeader>
 
         {open && (
           <TaskEditorForm
-            key={task?.id || 'new-task'}
+            key={task?.id || initialParentId || 'new-task'}
             task={task}
+            initialParentId={initialParentId}
             allTasks={allTasks}
             onSave={onSave}
             onDelete={onDelete}

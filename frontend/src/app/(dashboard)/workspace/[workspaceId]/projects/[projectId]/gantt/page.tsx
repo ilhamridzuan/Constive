@@ -33,9 +33,46 @@ export default function ProjectGanttPage({
   const [searchQuery, setSearchQuery] = useState('');
   const [isFullScreen, setIsFullScreen] = useState(false);
 
+  // Collapsed Hierarchy State
+  const [collapsedIds, setCollapsedIds] = useState<Set<string>>(new Set());
+
   // Dialog State
   const [editorOpen, setEditorOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<TaskItem | null>(null);
+  const [initialParentId, setInitialParentId] = useState<string | null>(null);
+
+  // Find all parent tasks in rawTasks
+  const parentTaskIds = useMemo(() => {
+    const ids = new Set<string>();
+    rawTasks.forEach((t) => {
+      if (rawTasks.some((child) => child.parentId === t.id)) {
+        ids.add(t.id);
+      }
+    });
+    return ids;
+  }, [rawTasks]);
+
+  const isAllExpanded = collapsedIds.size === 0;
+
+  const handleToggleExpandAll = () => {
+    if (isAllExpanded) {
+      setCollapsedIds(new Set(parentTaskIds));
+    } else {
+      setCollapsedIds(new Set());
+    }
+  };
+
+  const handleToggleTaskCollapse = (taskId: string) => {
+    setCollapsedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(taskId)) {
+        next.delete(taskId);
+      } else {
+        next.add(taskId);
+      }
+      return next;
+    });
+  };
 
   // Filter Tasks by Search Query & Status
   const filteredTasks = useMemo(() => {
@@ -43,20 +80,35 @@ export default function ProjectGanttPage({
       const matchesSearch =
         !searchQuery ||
         task.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        task.description?.toLowerCase().includes(searchQuery.toLowerCase());
+        task.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        task.wbsCode?.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesStatus = statusFilter === 'ALL' || task.status === statusFilter;
       return matchesSearch && matchesStatus;
     });
   }, [rawTasks, searchQuery, statusFilter]);
 
-  // Handlers
-  const handleAddTask = () => {
+  // Handlers for Task Creation & Editing
+  const handleAddTaskUnder = (parentTask: TaskItem) => {
     setSelectedTask(null);
+    setInitialParentId(parentTask.id);
+    // Ensure parent is expanded so user sees the new child immediately
+    setCollapsedIds((prev) => {
+      const next = new Set(prev);
+      next.delete(parentTask.id);
+      return next;
+    });
+    setEditorOpen(true);
+  };
+
+  const handleAddTaskRoot = () => {
+    setSelectedTask(null);
+    setInitialParentId(null);
     setEditorOpen(true);
   };
 
   const handleTaskDoubleClick = (task: TaskItem) => {
     setSelectedTask(task);
+    setInitialParentId(null);
     setEditorOpen(true);
   };
 
@@ -124,10 +176,11 @@ export default function ProjectGanttPage({
         onStatusFilterChange={setStatusFilter}
         searchQuery={searchQuery}
         onSearchQueryChange={setSearchQuery}
-        onAddTask={handleAddTask}
         onRefresh={() => refetch()}
         isFullScreen={isFullScreen}
         onToggleFullScreen={toggleFullScreen}
+        isAllExpanded={isAllExpanded}
+        onToggleExpandAll={handleToggleExpandAll}
       />
 
       {/* Main Gantt Canvas Wrapper */}
@@ -142,6 +195,10 @@ export default function ProjectGanttPage({
           onDateChange={handleDateChange}
           onProgressChange={handleProgressChange}
           onTaskDoubleClick={handleTaskDoubleClick}
+          collapsedIds={collapsedIds}
+          onToggleTaskCollapse={handleToggleTaskCollapse}
+          onAddTaskUnder={handleAddTaskUnder}
+          onAddTaskRoot={handleAddTaskRoot}
         />
       )}
 
@@ -153,6 +210,7 @@ export default function ProjectGanttPage({
         open={editorOpen}
         onOpenChange={setEditorOpen}
         task={selectedTask}
+        initialParentId={initialParentId}
         allTasks={rawTasks}
         onSave={handleSaveTask}
         onDelete={handleDeleteTask}
