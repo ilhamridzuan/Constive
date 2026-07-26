@@ -136,7 +136,7 @@ export function ProjectCard({ project, workspaceId, userRole = 'ADMIN' }: Projec
         )}
 
         <Button size="sm" className="h-8 text-xs gap-1 ml-auto" asChild>
-          <Link href={`/workspace/${workspaceId}/projects/${project.id}`} target="_blank" rel="noopener noreferrer">
+          <Link href={`/workspace/${workspaceId}/projects/${project.id}`}>
             Buka Proyek <ArrowUpRight className="h-3.5 w-3.5" />
           </Link>
         </Button>
