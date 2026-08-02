@@ -3,7 +3,7 @@
 | Parameter Dokumen | Detail Informasi |
 | --- | --- |
 | Nama Sistem / Produk | Constive Construction Management Platform |
-| Versi Dokumen | v0.3 |
+| Versi Dokumen | v0.5 |
 | Status Dokumen | Approved |
 | Penyusun (Author) | Tim Pengembang Constive |
 | Tanggal Pembuatan | 22 Juli 2026 |
@@ -16,6 +16,8 @@
 | v0.1 | 22 Juli 2026 | Tim Pengembang Constive | Draf awal berdasarkan konsolidasi rencana strategis, cetak biru teknis, dan penetapan model bisnis PLG Freemium. |
 | v0.2 | 22 Juli 2026 | System Analyst | Penambahan modul [FT-004] Autentikasi & Pengelolaan Identitas Pengguna: alur Sign Up/Sign In, Reset Password/Magic Link, Invite Activation Gate, dan Manajemen Sesi JWT. Pembaruan ERD, NFR, dan Glosarium terkait. |
 | v0.3 | 25 Juli 2026 | System Analyst | Hapus alur review status laporan harian & ganti dengan fitur komentar berdiskusi, rename daily_work_reports, Gantt Chart WBS multi-level. |
+| v0.4 | 29 Juli 2026 | System Analyst & Tech Lead | Alignment arsitektur: penambahan entitas task_dependencies (FS/SS/FF/SF), batas maks 10 foto & pengiriman multipart atomik laporan harian, moderasi komentar Admin/Owner. |
+| v0.5 | 31 Juli 2026 | System Analyst & Tech Lead | Refaktor stack teknologi: adopsi Next.js (TypeScript) full-stack menggantikan NestJS backend terpisah, migrasi autentikasi ke `@supabase/ssr` (cookie-based session via Next.js Middleware), migrasi deployment ke Vercel + Supabase Cloud (menggantikan Docker/GitHub Actions), pembaruan seluruh klausul arsitektur, data fetching, autentikasi, dan deployment. |
 
 ## Bab 1: Latar Belakang & Tujuan (Background & Objectives)
 
@@ -42,7 +44,7 @@ Visi jangka panjang Constive adalah menjadi standar utama platform kolaborasi da
 | Manajemen Proyek & Task (Gantt Chart) | C / R / U / D | C / R / U / A | R |
 | Laporan Harian, Foto Progres, & Komentar | C / R / U / D | C / R / U | C / R / U (Milik Sendiri) |
 
-*Catatan: Semua anggota workspace dapat memberikan komentar pada laporan harian.*
+*Catatan: Semua anggota workspace dapat memberikan komentar pada laporan harian. Admin dan Owner dapat menghapus komentar dari anggota lain untuk keperluan moderasi.*
 | Manajemen Material & DMS (Fase 2) | C / R / U / D | C / R / U | R / C (Input Logistik) |
 | RAB & Finansial (Fase 3) | C / R / U / D | C / R / U | - |
 
@@ -52,7 +54,7 @@ Visi jangka panjang Constive adalah menjadi standar utama platform kolaborasi da
 
 - **Manajemen Workspace & Multi-Tenancy (PLG Freemium):** Fitur ini memungkinkan pengguna membuat *workspace* mandiri atau bergabung ke beberapa *workspace* sekaligus dengan model lisensi paket Free (hingga 10 *users*) dan *Hybrid Seats*. Setiap akun pengguna bersifat independen dan dilengkapi antarmuka *Workspace Switcher* untuk memisahkan proyek pribadi dan kantor.
 - **Interactive Gantt Chart & Real-Time Sync:** Modul penjadwalan visual yang memanfaatkan library gantt-task-react dengan *custom wrapper component*, TanStack Query untuk *Optimistic UI updates*, serta Supabase Realtime via WebSockets. Project Manager dapat mengelola hirarki WBS multi-level (diprioritaskan hingga level 2, contoh: "1. Fondasi -> 1.1 Pemasangan Tiang Pancang"), tanggal mulai/selesai, serta dependensi antar-tugas secara kolaboratif pada antarmuka desktop.
-- **Form Laporan Harian Pintar & Dokumentasi Visual (Mobile-Friendly):** Antarmuka web yang dirancang *mobile-friendly* bagi Pengawas Lapangan untuk mencatat kondisi cuaca, jumlah tenaga kerja, catatan kendala, serta mengunggah foto progres fisik langsung dari lokasi proyek. Berkas foto diunggah langsung ke Supabase Storage via API untuk efisiensi penyimpanan database.
+- **Form Laporan Harian Pintar & Dokumentasi Visual (Mobile-Friendly):** Antarmuka web yang dirancang *mobile-friendly* bagi Pengawas Lapangan untuk mencatat kondisi cuaca, jumlah tenaga kerja, catatan kendala, serta mengunggah foto progres fisik langsung dari lokasi proyek. Berkas foto diunggah langsung ke Supabase Storage melalui Next.js API Routes / Server Actions untuk efisiensi penyimpanan database.
 
 ### 4.2 Out-of-Scope (Ditunda ke Fase Lanjutan)
 
@@ -63,7 +65,7 @@ Visi jangka panjang Constive adalah menjadi standar utama platform kolaborasi da
 
 **PENTING:** Aturan ini wajib dipatuhi oleh AI Coding Assistant saat menggenerasi kode dari spesifikasi ini!
 
-- DILARANG mengubah arsitektur autentikasi *stateless* berbasis JWT dan Supabase Auth yang telah ditetapkan.
+- DILARANG mengubah arsitektur autentikasi berbasis `@supabase/ssr` (*cookie-based session management*) dan Supabase Auth yang telah ditetapkan.
 - DILARANG menyimpan berkas biner foto progres secara langsung di dalam database PostgreSQL (wajib menggunakan URL teks dari Supabase Storage).
 - DILARANG melakukan *query* database tanpa menyertakan konteks workspace_id untuk menjaga isolasi data *multi-tenancy*.
 
@@ -111,7 +113,7 @@ Feature: Manajemen Workspace & Undangan Anggota
 
 #### Deskripsi Fungsional
 
-Modul penjadwalan visual interaktif berbasis desktop yang dibangun menggunakan library gantt-task-react dengan *custom wrapper component*. PM dapat melakukan aksi *drag-and-drop* untuk mengatur durasi, tanggal pelaksanaan, serta hirarki dependensi tugas (parent/sub-task) dengan dukungan WBS multi-level (hingga level 2). Sistem akan secara otomatis meng-generate kode WBS berdasarkan posisi dalam hirarki. Sistem memanfaatkan TanStack Query untuk *Optimistic UI updates* (UI berubah seketika secara lokal) dan Supabase Realtime via WebSockets untuk menyinkronkan perubahan ke layar PM lain secara instan tanpa memuat ulang halaman.
+Modul penjadwalan visual interaktif berbasis desktop yang dibangun menggunakan library gantt-task-react dengan *custom wrapper component*. PM dapat melakukan aksi *drag-and-drop* untuk mengatur durasi, tanggal pelaksanaan, serta hirarki tugas induk-anak (parent/sub-task) dan dependensi antar-tugas dengan empat tipe relasi standar (Finish-to-Start, Start-to-Start, Finish-to-Finish, Start-to-Finish) dengan dukungan WBS multi-level (hingga level 2). Sistem akan secara otomatis meng-generate kode WBS berdasarkan posisi dalam hirarki. Sistem memanfaatkan TanStack Query untuk *Optimistic UI updates* (UI berubah seketika secara lokal) dengan mutasi data melalui Next.js Server Actions / API Routes, dan Supabase Realtime via WebSockets untuk menyinkronkan perubahan ke layar PM lain secara instan tanpa memuat ulang halaman.
 
 #### Aturan Bisnis & Edge Cases (Business Logic)
 
@@ -128,7 +130,7 @@ Feature: Interactive Gantt Chart & Kolaborasi Real-Time
     Given PM berada di halaman Gantt Chart proyek aktif
     When PM menggeser ujung batang tugas "Pengecoran Pondasi" dari tanggal 25 Juli ke 28 Juli
     Then Tampilan UI Gantt Chart langsung memperbarui durasi tugas secara lokal (Optimistic UI)
-    And Sistem mengirim mutasi data ke API backend dan menyiarkan perubahan via Supabase Realtime ke PM lain
+    And Sistem mengirim mutasi data melalui Next.js Server Action dan menyiarkan perubahan via Supabase Realtime ke PM lain
     And Database PostgreSQL mengonfirmasi pembaruan tanggal tugas
 
   Scenario: Success - Membuat sub-task di bawah parent task
@@ -153,11 +155,13 @@ Feature: Interactive Gantt Chart & Kolaborasi Real-Time
 
 #### Deskripsi Fungsional
 
-Formulir input terstruktur pada antarmuka web yang dioptimalkan secara *mobile-friendly* untuk diakses dari browser ponsel pintar. Pengawas Lapangan dapat memilih proyek aktif, menginput kondisi cuaca, jumlah tenaga kerja yang hadir, serta catatan kendala operasional. Pengawas dapat mengambil foto progres fisik menggunakan kamera ponsel dan mengunggahnya langsung ke Supabase Storage via API, di mana backend menyimpan URL foto ke tabel daily_work_report_media. Seluruh anggota workspace dapat memberikan komentar pada laporan harian yang telah dikirim, membalas komentar (threaded replies), serta mengedit atau menghapus komentar milik mereka sendiri.
+Formulir input terstruktur pada antarmuka web yang dioptimalkan secara *mobile-friendly* untuk diakses dari browser ponsel pintar. Pengawas Lapangan dapat memilih proyek aktif, menginput kondisi cuaca, jumlah tenaga kerja yang hadir, serta catatan kendala operasional. Pengawas dapat mengambil foto progres fisik menggunakan kamera ponsel dan mengunggahnya langsung ke Supabase Storage melalui Next.js API Route (multipart upload handler), di mana server menyimpan URL foto ke tabel daily_work_report_media. Seluruh anggota workspace dapat memberikan komentar pada laporan harian yang telah dikirim, membalas komentar (threaded replies), serta mengedit atau menghapus komentar milik mereka sendiri.
 
 #### Aturan Bisnis & Edge Cases (Business Logic)
 
 - **Validasi Input & Batasan:** Input jumlah tenaga kerja wajib berupa angka non-negatif (>= 0). Format berkas foto yang diizinkan adalah JPG, JPEG, dan PNG dengan ukuran maksimal 5 MB per berkas.
+- Maximum 10 foto per laporan harian.
+- Pengiriman laporan harian dan foto dilakukan dalam satu request multipart. Sistem wajib memvalidasi minimal 1 foto terlampir sebelum menyimpan laporan.
 - **Kondisi Batas (Edge Case 1):** Jika pengawasan dilakukan di area minim sinyal, form wajib mempertahankan data draf inputan teks lokal agar tidak hilang saat halaman browser tidak sengaja teroles (*refresh*).
 - **Penanganan Error (Error Handling):** Jika pengunggahan foto gagal akibat berkas melebihi 5 MB, sistem wajib menolak berkas sebelum proses *upload* dimulai dan menampilkan peringatan *"Ukuran foto melebihi batas 5 MB"*.
 
@@ -170,7 +174,8 @@ Feature: Form Laporan Harian Pintar & Dokumentasi Visual
     Given Pengawas Lapangan mengakses aplikasi via browser ponsel dan berada di halaman "Laporan Harian"
     When Pengawas mengisi log cuaca "Cerah", jumlah pekerja "12", catatan "Pengecoran kolom lantai 1 selesai", dan memilih 2 foto dari kamera
     And Pengawas mengeklik tombol "Kirim Laporan"
-    Then Berkas foto terunggah ke Supabase Storage Bucket
+    Then Sistem memvalidasi bahwa minimal 1 foto terlampir dalam request multipart
+    And Berkas foto terunggah ke Supabase Storage Bucket secara atomik bersama data laporan
     And Data laporan tersimpan di tabel `daily_work_reports` dan URL foto tersimpan di `daily_work_report_media`
     And Dasbor pemantauan tim kantor terbarui secara real-time
 
@@ -186,6 +191,13 @@ Feature: Form Laporan Harian Pintar & Dokumentasi Visual
     Then Sistem menolak berkas gambar tersebut pada sisi klien
     And Formulir menampilkan pesan kesalahan "File gambar terlalu besar (Maksimal 5 MB)"
 
+  Scenario: Failure - Mengirim laporan tanpa foto terlampir
+    Given Pengawas berada di formulir Laporan Harian
+    When Pengawas mengisi data laporan tetapi tidak melampirkan foto
+    And Pengawas mengeklik tombol "Kirim Laporan"
+    Then Sistem menolak pengiriman laporan
+    And Formulir menampilkan pesan kesalahan "Minimal 1 foto progres wajib dilampirkan"
+
 ```
 
 ### [FT-004] Autentikasi & Pengelolaan Identitas Pengguna (Authentication & User Identity Management)
@@ -199,9 +211,9 @@ Feature: Form Laporan Harian Pintar & Dokumentasi Visual
 
 #### Deskripsi Fungsional
 
-Modul ini menjadi *gerbang utama* (entry gate) seluruh interaksi pengguna dengan platform Constive. Sistem autentikasi dibangun sepenuhnya di atas **Supabase Auth** dengan arsitektur *stateless* berbasis **JSON Web Token (JWT)** yang telah ditetapkan dalam batasan teknis proyek. Modul ini menangani empat alur kerja utama:
+Modul ini menjadi *gerbang utama* (entry gate) seluruh interaksi pengguna dengan platform Constive. Sistem autentikasi dibangun sepenuhnya di atas **Supabase Auth** menggunakan package **`@supabase/ssr`** yang mengelola sesi autentikasi secara *cookie-based* melalui **Next.js Middleware**. Pendekatan ini menghilangkan kebutuhan penyimpanan token manual di sisi klien dan memastikan sesi tersedia secara *isomorphic* di Server Components, Client Components, API Routes, dan Server Actions. Modul ini menangani empat alur kerja utama:
 
-1. **Pendaftaran & Login Mandiri (Sign Up / Sign In):** Pengguna baru dapat mendaftar secara mandiri melalui formulir email/password atau menggunakan OAuth 2.0 (Google / Microsoft). Setelah pendaftaran via email, pengguna wajib memverifikasi alamat email melalui tautan konfirmasi yang dikirimkan oleh Supabase Auth. Login via OAuth melewatkan langkah verifikasi email karena identitas telah terverifikasi oleh provider. Setelah autentikasi berhasil, Supabase Auth menerbitkan sepasang token (Access Token JWT + Refresh Token).
+1. **Pendaftaran & Login Mandiri (Sign Up / Sign In):** Pengguna baru dapat mendaftar secara mandiri melalui formulir email/password atau menggunakan OAuth 2.0 (Google / Microsoft). Setelah pendaftaran via email, pengguna wajib memverifikasi alamat email melalui tautan konfirmasi yang dikirimkan oleh Supabase Auth. Login via OAuth melewatkan langkah verifikasi email karena identitas telah terverifikasi oleh provider. Setelah autentikasi berhasil, `@supabase/ssr` secara otomatis menyimpan sesi (Access Token + Refresh Token) ke dalam **cookie HTTP** yang dikelola oleh Next.js Middleware.
 
 2. **Pemulihan Akun (Reset Password / Magic Link):** Pengguna yang lupa kata sandi dapat meminta tautan *Reset Password* yang dikirimkan ke email terdaftar. Tautan ini memiliki masa berlaku terbatas (default 1 jam dari Supabase Auth) dan bersifat sekali pakai (*one-time use*). Alternatifnya, pengguna dapat memilih opsi *Magic Link* untuk login tanpa password — sistem mengirimkan tautan autentikasi sekali pakai ke email yang langsung membuat sesi baru saat diklik.
 
@@ -210,10 +222,10 @@ Modul ini menjadi *gerbang utama* (entry gate) seluruh interaksi pengguna dengan
    - **Jika email belum terdaftar:** Pengguna diarahkan ke halaman Sign Up dengan email terisi otomatis (*pre-filled*) dan tidak dapat diubah (*read-only*). Setelah pendaftaran dan verifikasi email berhasil, pengguna langsung tergabung ke workspace sesuai undangan.
    - Token undangan disimpan di *session storage* peramban selama proses autentikasi berlangsung agar konteks undangan tidak hilang.
 
-4. **Manajemen Sesi & Auto-Refresh Token:** Sistem menerapkan skema *dual-token* dari Supabase Auth:
-   - **Access Token (JWT):** Berumur pendek (default 1 jam), disimpan dalam memori aplikasi (*in-memory*) pada sisi klien, dikirimkan sebagai `Authorization: Bearer <token>` header pada setiap request API.
-   - **Refresh Token:** Berumur panjang (default 7 hari, dapat dikonfigurasi), disimpan dalam **HTTP-Only Secure Cookie** dengan atribut `SameSite=Lax` untuk mencegah serangan CSRF dan XSS.
-   - Mekanisme *auto-refresh*: Supabase Client SDK secara proaktif memperbarui Access Token sebelum kedaluwarsa menggunakan event listener `onAuthStateChange`. Jika Refresh Token juga kedaluwarsa (pengguna tidak aktif > 7 hari), sesi dihapus dan pengguna diarahkan ke halaman Login.
+4. **Manajemen Sesi & Auto-Refresh Token:** Sistem menerapkan *cookie-based session management* via `@supabase/ssr`:
+   - **Sesi Cookie:** Access Token dan Refresh Token disimpan secara otomatis dalam **cookie HTTP terenkripsi** oleh `@supabase/ssr`. Cookie dikelola melalui Next.js Middleware (`middleware.ts`) yang berjalan pada setiap request, memastikan sesi selalu ter-refresh dan tersedia di seluruh lapisan aplikasi (Server Components, Client Components, API Routes, Server Actions).
+   - **Next.js Middleware (`middleware.ts`):** Middleware memanggil `supabase.auth.getUser()` pada setiap request untuk memvalidasi dan memperbarui sesi secara transparan. Jika sesi kedaluwarsa, pengguna secara otomatis diarahkan ke halaman Login.
+   - Mekanisme *auto-refresh*: `@supabase/ssr` secara proaktif memperbarui Access Token sebelum kedaluwarsa melalui Next.js Middleware. Jika Refresh Token juga kedaluwarsa (pengguna tidak aktif > 7 hari), sesi dihapus dan pengguna diarahkan ke halaman Login.
 
 #### Aturan Bisnis & Edge Cases (Business Logic)
 
@@ -234,7 +246,7 @@ Feature: Pendaftaran Akun Mandiri (Sign Up)
     Given Pengguna baru mengakses halaman "Sign Up" Constive
     When Pengguna mengisi nama lengkap "Ahmad Fauzi", email "ahmad@kontraktor.id", dan password yang memenuhi syarat
     And Pengguna mengeklik tombol "Daftar"
-    Then Sistem membuat entri pengguna baru di Supabase Auth dengan status "email_not_verified"
+    Then Sistem membuat entri pengguna baru di Supabase Auth via @supabase/ssr dengan status "email_not_verified"
     And Sistem mengirimkan email verifikasi ke "ahmad@kontraktor.id"
     And Halaman menampilkan pesan "Silakan periksa email Anda untuk verifikasi akun"
 
@@ -243,7 +255,7 @@ Feature: Pendaftaran Akun Mandiri (Sign Up)
     When Pengguna mengeklik tombol "Daftar dengan Google"
     And Pengguna menyelesaikan proses otorisasi di halaman Google OAuth
     Then Sistem membuat entri pengguna baru berdasarkan profil Google dengan status "email_verified"
-    And Sistem menerbitkan Access Token JWT dan Refresh Token
+    And @supabase/ssr menyimpan sesi (Access Token + Refresh Token) ke dalam cookie HTTP via Next.js Middleware
     And Pengguna diarahkan ke halaman "Buat Workspace Baru" atau Dashboard
 
   Scenario: Failure - Mendaftar dengan email yang sudah terdaftar
@@ -269,9 +281,8 @@ Feature: Login Pengguna (Sign In)
     Given Pengguna terdaftar mengakses halaman "Login" Constive
     When Pengguna mengisi email "ahmad@kontraktor.id" dan password yang benar
     And Pengguna mengeklik tombol "Masuk"
-    Then Supabase Auth memvalidasi kredensial dan menerbitkan Access Token JWT serta Refresh Token
-    And Access Token disimpan dalam memori aplikasi (in-memory)
-    And Refresh Token disimpan dalam HTTP-Only Secure Cookie
+    Then Supabase Auth memvalidasi kredensial via @supabase/ssr
+    And Sesi (Access Token + Refresh Token) disimpan secara otomatis ke dalam cookie HTTP oleh @supabase/ssr melalui Next.js Middleware
     And Pengguna diarahkan ke halaman Dashboard / Workspace Switcher
 
   Scenario: Failure - Login dengan email yang belum diverifikasi
@@ -364,21 +375,22 @@ Feature: Pintu Gerbang Undangan Workspace (Invite Activation Gate)
 ```gherkin
 Feature: Manajemen Sesi & Auto-Refresh Token
 
-  Scenario: Success - Auto-refresh Access Token sebelum kedaluwarsa
+  Scenario: Success - Auto-refresh sesi sebelum kedaluwarsa
     Given Pengguna sedang aktif menggunakan aplikasi Constive
-    And Access Token JWT akan kedaluwarsa dalam waktu kurang dari 60 detik
-    When Event listener Supabase `onAuthStateChange` mendeteksi token mendekati kedaluwarsa
-    Then Supabase Client SDK mengirimkan Refresh Token ke Supabase Auth endpoint
+    And Access Token dalam cookie akan kedaluwarsa dalam waktu dekat
+    When Next.js Middleware menjalankan `supabase.auth.getUser()` pada request berikutnya
+    Then @supabase/ssr secara transparan mengirimkan Refresh Token ke Supabase Auth endpoint
     And Supabase Auth menerbitkan Access Token baru dan Refresh Token baru (Token Rotation)
+    And Cookie sesi diperbarui secara otomatis oleh Middleware
     And Sesi pengguna tetap aktif tanpa gangguan atau redirect ke halaman Login
 
   Scenario: Failure - Refresh Token kedaluwarsa (pengguna tidak aktif > 7 hari)
     Given Pengguna terakhir mengakses aplikasi lebih dari 7 hari yang lalu
-    And Refresh Token telah melewati masa berlaku
+    And Refresh Token dalam cookie telah melewati masa berlaku
     When Pengguna membuka kembali aplikasi Constive di peramban
-    Then Supabase Client SDK gagal memperbarui Access Token
-    And Sistem menghapus seluruh data sesi dari memori dan cookie
-    And Pengguna diarahkan ke halaman Login dengan pesan "Sesi Anda telah berakhir. Silakan login kembali."
+    Then Next.js Middleware gagal memperbarui sesi via @supabase/ssr
+    And Sistem menghapus cookie sesi
+    And Middleware mengarahkan pengguna ke halaman Login dengan pesan "Sesi Anda telah berakhir. Silakan login kembali."
 
   Scenario: Security - Deteksi penggunaan ulang Refresh Token yang sudah di-rotasi
     Given Seorang aktor jahat telah mencuri Refresh Token pengguna "ahmad@kontraktor.id"
@@ -450,8 +462,8 @@ stateDiagram-v2
 | Lupa Password Form | Klik tautan reset dari email | Reset Password Form | Pengguna | Tautan reset berlaku (< 1 jam) dan belum pernah digunakan. |
 | Reset Password Form | Submit password baru | Login Form | Pengguna | Password baru memenuhi syarat validasi. Seluruh sesi lama diinvalidasi. |
 | Invite Link Clicked | Sistem cek email penerima undangan | Login / Sign Up | Pengguna Penerima Undangan | Token undangan masih berlaku dan belum dicabut. Redirect sesuai status registrasi email. |
-| Sesi Aktif | Access Token mendekati kedaluwarsa | Sesi Aktif (diperpanjang) | System / Supabase SDK | Refresh Token masih berlaku. Token Rotation diterapkan. |
-| Sesi Aktif | Refresh Token kedaluwarsa | Login Form | System | Seluruh sesi dihapus. Pengguna wajib login ulang. |
+| Sesi Aktif | Access Token dalam cookie mendekati kedaluwarsa | Sesi Aktif (diperpanjang) | System / Next.js Middleware + @supabase/ssr | Refresh Token masih berlaku. Cookie sesi diperbarui otomatis oleh Middleware. Token Rotation diterapkan. |
+| Sesi Aktif | Refresh Token kedaluwarsa | Login Form | System / Next.js Middleware | Cookie sesi dihapus. Pengguna wajib login ulang. |
 
 ### 6.3 Diagram Alur Status Laporan Harian (Mermaid Diagram)
 
@@ -480,6 +492,7 @@ erDiagram
     WORKSPACES ||--o{ WORKSPACE_INVITATIONS : "has_many"
     USERS ||--o{ WORKSPACE_INVITATIONS : "invited_by"
     PROJECTS ||--|{ TASKS : "has_many"
+    TASKS ||--o{ TASK_DEPENDENCIES : "has_dependencies"
     PROJECTS ||--o{ DAILY_WORK_REPORTS : "logs"
     USERS ||--o{ DAILY_WORK_REPORTS : "creates"
     DAILY_WORK_REPORTS ||--o{ DAILY_WORK_REPORT_MEDIA : "attaches"
@@ -564,6 +577,14 @@ erDiagram
         timestamp created_at
         timestamp updated_at
     }
+    TASK_DEPENDENCIES {
+        uuid id PK
+        uuid task_id FK
+        uuid depends_on_task_id FK
+        string dependency_type
+        uuid workspace_id FK
+        timestamp created_at
+    }
 ```
 
 ### 7.2 Daftar Entitas Utama
@@ -573,14 +594,15 @@ erDiagram
 - **Entitas `workspace_invitations`:** Menyimpan data undangan workspace yang dikirim oleh Admin, mencakup email penerima, peran yang ditetapkan, token unik sekali pakai, status undangan (*pending*, *accepted*, *expired*, *revoked*), dan masa berlaku token. Entitas ini menjadi kunci mekanisme *Invite Activation Gate* pada modul [FT-004].
 - **Entitas `workspace_members`:** Tabel penghubung (*junction table*) antara users dan workspaces yang menentukan peran (*role*) spesifik pengguna di dalam *workspace* tersebut.
 - **Entitas `projects`:** Menyimpan profil utama proyek konstruksi (nama, lokasi, status, tenggat waktu) yang terikat pada *workspace* tertentu.
-- **Entitas `tasks`:** Menyimpan data hirarki struktur kerja (WBS) untuk rendering Gantt Chart, mencakup durasi, status, *parent_id* untuk dependensi tugas, *level* kedalaman hirarki, serta *wbs_code* yang dihasilkan otomatis.
+- **Entitas `tasks`:** Menyimpan data hirarki struktur kerja (WBS) untuk rendering Gantt Chart, mencakup durasi, status, *parent_id* untuk hirarki induk-anak, *level* kedalaman hirarki, serta *wbs_code* yang dihasilkan otomatis. Dependensi antar-tugas dikelola melalui tabel `task_dependencies` yang mendukung empat tipe relasi: Finish-to-Start (FS), Start-to-Start (SS), Finish-to-Finish (FF), dan Start-to-Finish (SF).
 - **Entitas `daily_work_reports`:** Menyimpan catatan rekapitulasi operasional harian yang dikirimkan oleh Pengawas Lapangan.
 - **Entitas `daily_work_report_media`:** Menyimpan tautan URL gambar bukti progres lapangan yang terhubung dengan layanan cloud storage.
 - **Entitas `daily_work_report_comments`:** Menyimpan data komentar pada laporan harian, referensi pembuat komentar (user_id), serta balasan berulir (parent_comment_id).
+- **Entitas `task_dependencies`:** Tabel penghubung (*junction table*) yang mendefinisikan relasi dependensi antar-tugas pada Gantt Chart. Mendukung empat tipe dependensi standar (FS, SS, FF, SF) dan memungkinkan satu tugas memiliki banyak dependensi sekaligus.
 
 ## Bab 8: Persyaratan Non-Fungsional (Non-Functional Requirements / NFR)
 
-- **Keamanan Data & Otorisasi (Security):** Seluruh komunikasi data antara peramban dan server wajib menggunakan enkripsi SSL/TLS 1.3 (HTTPS). Otentikasi pengguna menerapkan *Stateless JWT* melalui Supabase Auth dengan otorisasi berbasis RBAC dan isolasi data multi-tenancy di tingkat *query* database. Access Token JWT disimpan secara *in-memory* (tidak di `localStorage`) untuk meminimalkan risiko XSS, sedangkan Refresh Token disimpan dalam **HTTP-Only Secure Cookie** dengan atribut `SameSite=Lax` untuk mitigasi CSRF. Sistem menerapkan *Refresh Token Rotation* dan *Reuse Detection* dari Supabase Auth untuk mendeteksi pencurian token.
+- **Keamanan Data & Otorisasi (Security):** Seluruh komunikasi data antara peramban dan server wajib menggunakan enkripsi SSL/TLS 1.3 (HTTPS), dijamin oleh Vercel Edge Network. Otentikasi pengguna menerapkan *cookie-based session management* melalui `@supabase/ssr` dan **Next.js Middleware** (`middleware.ts`) dengan otorisasi berbasis RBAC dan isolasi data multi-tenancy di tingkat *query* database. Sesi (Access Token + Refresh Token) disimpan dalam **cookie HTTP** yang dikelola sepenuhnya oleh `@supabase/ssr`, menghilangkan risiko penyimpanan token di `localStorage` atau memori klien. Middleware memvalidasi dan me-refresh sesi pada setiap request. Sistem menerapkan *Refresh Token Rotation* dan *Reuse Detection* dari Supabase Auth untuk mendeteksi pencurian token.
 - **Performa & Waktu Respon (Performance):** Waktu muat (*load time*) antarmuka laporan harian pada peramban seluler tidak boleh melebihi 2,0 detik pada jaringan seluler 4G. Perubahan visual pada Gantt Chart wajib menampilkan pembaruan seketika (*< 100 ms*) menggunakan *Optimistic UI*, dan sinkronisasi data antar-klien via Supabase Real-time wajib selesai dalam waktu kurang dari 500 milidetik.
 - **Ketersediaan & Keandalan (Availability & Reliability):** Sistem menjamin tingkat ketersediaan (*uptime*) minimal 99,5% setiap bulan di luar jadwal pemeliharaan terencana. Seluruh data transaksi di database PostgreSQL dibackup secara otomatis setiap hari dengan retensi data selama 30 hari di cloud storage.
 - **Pencatatan Audit Log (Audit Trail):** Sistem wajib mencatat setiap aktivitas mutasi data penting (pembuatan proyek, perubahan jadwal Gantt Chart, dan pengiriman laporan harian) ke dalam tabel audit terpisah. Log ini mencatat *timestamp*, *user_id*, *workspace_id*, aksi yang dilakukan, serta data sebelum-sesudah mutasi.
@@ -589,17 +611,18 @@ erDiagram
 
 ### 9.1 Batasan Stack Teknologi Internal
 
-- **Frontend Framework:** Next.js (React / TypeScript) dengan Tailwind CSS dan komponen shadcn/ui.
+- **Full-Stack Framework:** Next.js (TypeScript) dengan App Router, Server Components, Server Actions, dan API Routes. Next.js menangani seluruh lapisan frontend dan backend logic, mengeliminasi kebutuhan akan framework backend terpisah.
+- **Styling & UI Components:** Tailwind CSS dengan komponen shadcn/ui untuk desain sistem yang konsisten dan aksesibel.
 - **Gantt Chart Engine:** Library gantt-task-react dengan *Custom Abstraction Wrapper Component* dan State Management (TanStack Query / Zustand).
-- **Backend Framework:** Node.js dengan NestJS (TypeScript) mengadopsi pola *Decoupled Architecture* dan *Modular Monolith*.
-- **BaaS Provider (Full Supabase):** PostgreSQL (Database), Supabase Auth (Identity & OAuth), Supabase Storage (Object Storage), dan Supabase Real-time (WebSockets).
-- **DevOps & Infrastruktur:** Containerization berbasis Docker dan otomasisasi CI/CD menggunakan GitHub Actions.
+- **Data Fetching & State Management:** TanStack Query untuk *client-side data fetching*, *caching*, *Optimistic UI updates*, dan *background refetching*. Data awal di-*prefetch* di Server Components untuk performa optimal.
+- **BaaS Provider (Supabase Cloud):** PostgreSQL (Database), Supabase Auth via `@supabase/ssr` (Identity, OAuth, & *cookie-based session management* melalui Next.js Middleware), Supabase Storage (Object Storage), dan Supabase Real-time (WebSockets).
+- **Deployment & Infrastruktur:** Vercel (hosting, edge network, CI/CD otomatis via Git push) + Supabase Cloud (managed PostgreSQL, Auth, Storage, Realtime). Tidak menggunakan Docker atau pipeline CI/CD terpisah untuk deployment.
 
 ### 9.2 Tabel Integrasi Pihak Ketiga & Sistem Eksternal
 
 | Nama Sistem / API | Tujuan Integrasi | Metode Integrasi | Potensi Kendala / Mitigasi |
 | --- | --- | --- | --- |
-| Supabase Auth | Autentikasi Stateless JWT dan OAuth (Google/Microsoft). | SDK / REST API | Token kedaluwarsa -> Implementasi mekanisme auto-refresh token di client. |
+| Supabase Auth (via `@supabase/ssr`) | Autentikasi *cookie-based session* dan OAuth (Google/Microsoft) melalui Next.js Middleware. | `@supabase/ssr` SDK | Sesi kedaluwarsa -> Auto-refresh transparan via Next.js Middleware pada setiap request. |
 | Supabase Storage | Penyimpanan media foto progres harian & dokumen PDF. | AWS S3 API Compatible / SDK | Ukuran file besar -> Validasi client-side maksimal 5 MB dan kompresi gambar. |
 | Supabase Real-time | Sinkronisasi data Gantt Chart dan notifikasi real-time. | WebSockets Protocol | Koneksi terputus -> Sediakan mekanisme auto-reconnect & indikator status koneksi. |
 | Software Akuntansi Eksternal | Ekspor rekapitulasi data keuangan proyek (Fase 3). | REST API / File Export (CSV/Excel) | Perbedaan format data -> Buat data mapper engine pada modul pengekspor. |
@@ -615,7 +638,7 @@ erDiagram
 ## Bab 11: Asumsi & Batasan (Assumptions & Constraints)
 
 - **Konektivitas Internet Lapangan:** Diasumsikan bahwa tim lapangan memiliki akses jaringan seluler dasar (minimal 3G/4G) yang memadai di lokasi proyek untuk mengirimkan laporan harian, mengacu pada fakta kebiasaan pelaporan rutin via WhatsApp.
-- **Pengembangan Lintas Platform (API-First):** Pengembangan awal difokuskan sepenuhnya pada aplikasi web yang dirancang *mobile-friendly* untuk layar peramban ponsel. Pendekatan *API-First* diterapkan agar backend siap dihubungkan ke aplikasi *native* (iOS/Android) di masa depan tanpa membongkar ulang server.
+- **Pengembangan Lintas Platform (Full-Stack Next.js):** Pengembangan awal difokuskan sepenuhnya pada aplikasi web *full-stack* Next.js yang dirancang *mobile-friendly* untuk layar peramban ponsel. Next.js API Routes menyediakan endpoint RESTful yang dapat digunakan kembali oleh aplikasi *native* (iOS/Android) di masa depan tanpa memerlukan backend terpisah.
 - **Dukungan Peramban Pengguna:** Aplikasi web dirancang untuk berjalan optimal pada peramban modern (Google Chrome, Mozilla Firefox, Microsoft Edge, dan Safari versi 2 tahun terakhir). Dukungan untuk peramban tua (*legacy*) secara tegas tidak disediakan.
 
 ## Bab 12: Pertanyaan Terbuka & TBD (Open Questions / To Be Decided)
@@ -635,8 +658,9 @@ erDiagram
 - **Product-Led Growth (PLG) :** Strategi pertumbuhan bisnis di mana produk itu sendiri menjadi pendorong utama akuisisi, konversi, dan retensi pengguna.
 - **RBAC :** *Role-Based Access Control*; metode pembatasan hak akses sistem berdasarkan peran pengguna.
 - **Gantt Chart :** Diagram batang horizontal untuk merencanakan dan melacak linimasa serta dependensi tugas proyek.
-- **Modular Monolith :** Arsitektur perangkat lunak dengan satu repositori tunggal yang komponen kodenya dipisah secara ketat menurut domain bisnis.
+- **`@supabase/ssr` :** Package resmi Supabase untuk framework SSR (Server-Side Rendering) seperti Next.js yang mengelola sesi autentikasi menggunakan *cookie-based storage*, memastikan sesi tersedia secara *isomorphic* di Server Components, Client Components, API Routes, Server Actions, dan Middleware.
 - **BaaS :** *Backend-as-a-Service*; layanan komputasi awan yang menyediakan infrastruktur backend (database, auth, storage) siap pakai.
+- **Vercel :** Platform deployment dan hosting untuk aplikasi Next.js dengan fitur *edge network*, *serverless functions*, *automatic CI/CD via Git push*, dan *preview deployments*.
 - **Optimistic UI Update :** Teknik pembaruan antarmuka di mana UI diubah seketika secara lokal sebelum server mengonfirmasi respons sukses.
 - **JWT (JSON Web Token) :** Standar terbuka (RFC 7519) untuk merepresentasikan klaim keamanan antara dua pihak dalam format token terenkode yang bersifat *self-contained* dan *stateless*.
 - **OAuth 2.0 :** Protokol otorisasi standar industri yang memungkinkan aplikasi pihak ketiga mengakses sumber daya pengguna tanpa mengekspos kredensial (password) pengguna.
