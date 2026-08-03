@@ -98,7 +98,7 @@ export default function NewDailyWorkReportPage({
         weather,
         laborCount,
         notes: notes.trim(),
-        mediaUrls: photos.map((p) => p.url),
+        mediaFiles: photos.map((p) => p.file as File).filter(Boolean),
       });
       clearDraft();
       router.push(`/workspace/${workspaceId}/projects/${projectId}/daily-work-reports`);
