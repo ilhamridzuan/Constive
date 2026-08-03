@@ -39,7 +39,7 @@ export function useCreateDailyWorkReport(workspaceId: string, projectId: string)
 
   return useMutation({
     mutationFn: (input: CreateDailyWorkReportInput) =>
-      dailyWorkReportService.createDailyWorkReport(projectId, input),
+      dailyWorkReportService.createDailyWorkReport(workspaceId, projectId, input),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: queryKeys.dailyWorkReports.list(workspaceId, projectId),
@@ -73,7 +73,7 @@ export function useCreateComment(
 
   return useMutation({
     mutationFn: (input: CreateCommentInput) =>
-      dailyWorkReportService.createComment(projectId, reportId, input),
+      dailyWorkReportService.createComment(workspaceId, reportId, input),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: queryKeys.dailyWorkReports.comments(workspaceId, projectId, reportId),
@@ -91,7 +91,7 @@ export function useUpdateComment(
 
   return useMutation({
     mutationFn: ({ commentId, input }: { commentId: string; input: UpdateCommentInput }) =>
-      dailyWorkReportService.updateComment(projectId, reportId, commentId, input),
+      dailyWorkReportService.updateComment(commentId, input),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: queryKeys.dailyWorkReports.comments(workspaceId, projectId, reportId),
@@ -109,7 +109,7 @@ export function useDeleteComment(
 
   return useMutation({
     mutationFn: (commentId: string) =>
-      dailyWorkReportService.deleteComment(projectId, reportId, commentId),
+      dailyWorkReportService.deleteComment(workspaceId, commentId),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: queryKeys.dailyWorkReports.comments(workspaceId, projectId, reportId),

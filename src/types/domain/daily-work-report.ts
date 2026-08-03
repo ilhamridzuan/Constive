@@ -29,7 +29,7 @@ export interface CreateDailyWorkReportInput {
   weather: WeatherCondition;
   laborCount: number;
   notes: string;
-  mediaUrls: string[];
+  mediaFiles: File[];
 }
 
 export interface DailyWorkReportFilter {
